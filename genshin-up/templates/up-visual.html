@@ -247,6 +247,20 @@ h1{
 .v-next{display:inline-block;width:4em;text-align:left}
 .dd-stats{color:var(--muted);white-space:nowrap}
 .dd-stats b{color:var(--gold)}
+.legend[hidden],.dist-grid[hidden],.dist-detail[hidden],.trend-area[hidden]{display:none}
+.dist-view{margin-left:auto;align-items:center}
+.trend-area{padding:16px 24px 2px}
+.trend-bar{display:flex;margin-bottom:12px}
+.trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px}
+.trend-note{padding:10px 0 18px;color:var(--muted);font-size:11.5px;letter-spacing:.03em}
+.trend-panel .dist-title{margin-bottom:6px}
+.trend-panel svg{display:block;width:100%;height:auto}
+.trend-panel text{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
+.trend-panel text.tv-num{fill:var(--text)}
+.trend-panel text.tv-med{fill:var(--gold)}
+.trend-pt{transition:opacity .15s}
+.trend-pt.dim{opacity:.12}
+.trend-pt circle.hit{fill:transparent;cursor:pointer}
 .lg-med{display:inline-block;width:16px;height:2px;background:var(--gold-bright);vertical-align:2px}
 .lg-avg{display:inline-block;width:16px;height:2px;background:repeating-linear-gradient(90deg,var(--violet) 0 4px,transparent 4px 7px);vertical-align:2px}
 
@@ -385,14 +399,32 @@ footer a svg{vertical-align:-2px;margin-right:4px}
     <section id="view-distribution" class="view" hidden>
       <div class="panel">
         <div class="panel-head">
-          <h2>复刻间隔分布</h2>
-          <div class="legend">
+          <h2 id="distTitle">复刻间隔分布</h2>
+          <div class="legend" id="distLegendHist">
             <span><i class="lg-med"></i>中位</span>
             <span><i class="lg-avg"></i>均值</span>
             <span>每箱 21 天 · 点击柱形在下方查看明细（再点一次取消）</span>
           </div>
+          <div class="legend" id="distLegendTrend" hidden>
+            <span>箱 = 四分位 · 须 = 1.5×IQR · 点为个体样本</span>
+            <span>悬浮看明细 · 点击复制</span>
+          </div>
+          <div class="rr-toggle dist-view" id="distView">
+            <button data-dview="hist" class="on">直方图</button>
+            <button data-dview="trend">年代趋势</button>
+          </div>
         </div>
         <div class="dist-grid" id="distGrid"></div>
+        <div class="trend-area" id="trendArea" hidden>
+          <div class="trend-bar">
+            <div class="rr-toggle" id="trendBucket">
+              <button data-bucket="rerun" class="on">按复刻年份</button>
+              <button data-bucket="debut">按首发年份</button>
+            </div>
+          </div>
+          <div class="trend-grid" id="trendGrid"></div>
+          <div class="trend-note" id="trendNote"></div>
+        </div>
         <div class="dist-detail">
           <div class="dd-head" id="ddHead">点击柱形查看明细</div>
           <div class="dd-body" id="ddBody"></div>
@@ -896,7 +928,10 @@ for (const c of list) {
   for (let i = 1; i < evs.length; i++) {
     const g = Math.max(0, Math.round((evs[i].t - d(evs[i - 1].end)) / DAY) - 1);
     gaps.push(g);
-    distGap[c.star].push({ name: c.name, gap: g, prev: evs[i - 1], next: evs[i] });
+    distGap[c.star].push({
+      name: c.name, gap: g, prev: evs[i - 1], next: evs[i],
+      debutYear: Number(c.first.date.slice(0, 4)), rerunYear: Number(evs[i].date.slice(0, 4)),
+    });
   }
   if (gaps.length) {
     distAvg[c.star].push({
@@ -1077,6 +1112,140 @@ function renderDistDetail() {
   body.innerHTML = h;
 }
 
+/* ---------- trend (yearly boxplots) ---------- */
+let distView = "hist";
+let trendBucket = "rerun";
+const TREND_NOTE = {
+  debut: "箱线 + 个体散点；新角色观察窗口短，后期样本的间隔天然偏短（截断偏差），看整体走势即可",
+  rerun: "箱线 + 个体散点；按每次复刻发生的年份归组（间隔未完成、不再复刻的不在样本内；2026 截至 9 月）",
+};
+const trendTips = { "5": [], "4": [] };
+
+function trendQuantile(sorted, q) {
+  const pos = (sorted.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+function trendJitter(g, k) {
+  return Math.abs(Math.sin((g + 1) * 12.9898 + (k + 1) * 78.233) * 43758.5453) % 1 - 0.5;
+}
+function trendTipText(star, p) {
+  return p.name + "（" + (star === "5" ? "五星" : "四星") + "）\n" +
+    poolLabel(p.prev) + " → " + poolLabel(p.next) + " · 间隔 " + p.gap + " 天\n" +
+    fmtDate(d(p.prev.end) + DAY) + " ~ " + p.next.date;
+}
+function trendTipHtml(star, p) {
+  return '<div class="t-name">' + esc(p.name) + '<span class="t-star">' + (star === "5" ? "五星" : "四星") + "</span></div>" +
+    '<div class="t-line">' + poolLabel(p.prev) + " → " + poolLabel(p.next) + " · 间隔 <em>" + p.gap + "</em> 天</div>" +
+    '<div class="t-line"><span class="t-date">' + fmtDate(d(p.prev.end) + DAY) + '</span> ~ <span class="t-date">' + p.next.date + "</span></div>";
+}
+function trendPanelHtml(star) {
+  const color = star === "5" ? "#d3bc8e" : "#9fb2c8";
+  const recs = distGap[star];
+  const byYear = new Map();
+  for (const p of recs) {
+    const y = trendBucket === "debut" ? p.debutYear : p.rerunYear;
+    if (!byYear.has(y)) byYear.set(y, []);
+    byYear.get(y).push(p);
+  }
+  const years = Array.from(byYear.keys()).sort(function (a, b) { return a - b; });
+  const W = 560, H = 330, L = 46, R = 12, T = 54, B = 34;
+  const x0 = L, x1 = W - R, y0 = T, y1 = H - B;
+  let vmax = 0;
+  for (const p of recs) vmax = Math.max(vmax, p.gap);
+  const step = vmax > 480 ? 200 : vmax > 240 ? 100 : 50;
+  const yMax = Math.ceil(vmax * 1.06 / step) * step;
+  const yy = function (v) { return y1 - v / yMax * (y1 - y0); };
+  const gw = (x1 - x0) / years.length;
+  const half = Math.min(28, gw * 0.32);
+  let s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img">';
+  for (let v = 0; v <= yMax; v += step) {
+    s += '<line x1="' + x0 + '" y1="' + yy(v) + '" x2="' + x1 + '" y2="' + yy(v) + '" stroke="#26304a" stroke-width="0.7"/>';
+    s += '<text x="' + (x0 - 8) + '" y="' + (yy(v) + 3.5).toFixed(1) + '" text-anchor="end">' + v + "</text>";
+  }
+  s += '<text transform="rotate(-90)" x="' + (-((y0 + y1) / 2)).toFixed(1) + '" y="13" text-anchor="middle">复刻间隔（天）</text>';
+  years.forEach(function (y, gi) {
+    const pts = byYear.get(y);
+    const vals = pts.map(function (p) { return p.gap; }).sort(function (a, b) { return a - b; });
+    const q1 = trendQuantile(vals, 0.25), q2 = trendQuantile(vals, 0.5), q3 = trendQuantile(vals, 0.75);
+    const iqr = q3 - q1;
+    let lo = vals[0], hi = vals[vals.length - 1];
+    for (const v of vals) { if (v >= q1 - 1.5 * iqr) { lo = v; break; } }
+    for (let i = vals.length - 1; i >= 0; i--) { if (vals[i] <= q3 + 1.5 * iqr) { hi = vals[i]; break; } }
+    const cx = x0 + gw * (gi + 0.5);
+    s += '<line x1="' + cx + '" y1="' + yy(q3) + '" x2="' + cx + '" y2="' + yy(hi) + '" stroke="#8d93a5" stroke-width="1"/>';
+    s += '<line x1="' + cx + '" y1="' + yy(q1) + '" x2="' + cx + '" y2="' + yy(lo) + '" stroke="#8d93a5" stroke-width="1"/>';
+    s += '<line x1="' + (cx - half * 0.55) + '" y1="' + yy(hi) + '" x2="' + (cx + half * 0.55) + '" y2="' + yy(hi) + '" stroke="#8d93a5" stroke-width="1"/>';
+    s += '<line x1="' + (cx - half * 0.55) + '" y1="' + yy(lo) + '" x2="' + (cx + half * 0.55) + '" y2="' + yy(lo) + '" stroke="#8d93a5" stroke-width="1"/>';
+    s += '<rect x="' + (cx - half) + '" y="' + yy(q3) + '" width="' + half * 2 + '" height="' + Math.max(1, yy(q1) - yy(q3)) + '" fill="#0e1524" stroke="' + color + '" stroke-width="1.3"/>';
+    s += '<line x1="' + (cx - half) + '" y1="' + yy(q2) + '" x2="' + (cx + half) + '" y2="' + yy(q2) + '" stroke="#f2ddab" stroke-width="1.6"/>';
+    s += '<text x="' + cx + '" y="' + (T - 26) + '" text-anchor="middle">n=' + vals.length + "</text>";
+    s += '<text class="tv-med" x="' + cx + '" y="' + (T - 12) + '" text-anchor="middle">中位 ' + fmtNum(q2) + "</text>";
+    pts.forEach(function (p, k) {
+      const px = cx + trendJitter(gi, k) * half * 1.5, py = yy(p.gap);
+      s += '<g class="trend-pt" data-star="' + star + '" data-i="' + trendTips[star].length + '" data-name="' + esc(p.name) + '">';
+      s += '<circle class="hit" cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="9"/>';
+      s += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="2.4" fill="' + color + '" opacity="0.62" pointer-events="none"/>';
+      s += "</g>";
+      trendTips[star].push(p);
+    });
+    s += '<text class="tv-num" x="' + cx + '" y="' + (H - 12) + '" text-anchor="middle">' + y + "</text>";
+  });
+  s += "</svg>";
+  return '<div class="dist-panel trend-panel" data-star="' + star + '"><div class="dist-title">' +
+    (star === "5" ? "五星" : "四星") + " · " + (trendBucket === "debut" ? "按首发年份" : "按复刻年份") + "</div>" + s + "</div>";
+}
+function buildTrend() {
+  trendTips["5"] = [];
+  trendTips["4"] = [];
+  document.getElementById("trendGrid").innerHTML = trendPanelHtml("5") + trendPanelHtml("4");
+  document.getElementById("trendNote").textContent = TREND_NOTE[trendBucket];
+}
+buildTrend();
+
+const trendArea = document.getElementById("trendArea");
+let trendLastPt = null;
+trendArea.addEventListener("mouseover", function (e) {
+  const g = e.target.closest ? e.target.closest(".trend-pt") : null;
+  if (!g) {
+    if (trendLastPt) { trendLastPt = null; hideTip(); }
+    return;
+  }
+  if (g === trendLastPt) return;
+  trendLastPt = g;
+  showTip(trendTipHtml(g.dataset.star, trendTips[g.dataset.star][Number(g.dataset.i)]), e);
+});
+trendArea.addEventListener("mouseout", function (e) {
+  if (e.target.closest && e.target.closest(".trend-pt")) { trendLastPt = null; hideTip(); }
+});
+trendArea.addEventListener("click", function (e) {
+  const g = e.target.closest ? e.target.closest(".trend-pt") : null;
+  if (!g) return;
+  copyText(trendTipText(g.dataset.star, trendTips[g.dataset.star][Number(g.dataset.i)]));
+});
+document.getElementById("distView").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  distView = btn.dataset.dview;
+  this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  const hist = distView === "hist";
+  document.getElementById("distTitle").textContent = hist ? "复刻间隔分布" : "复刻间隔趋势";
+  document.getElementById("distGrid").hidden = !hist;
+  document.querySelector(".dist-detail").hidden = !hist;
+  document.getElementById("trendArea").hidden = hist;
+  document.getElementById("distLegendHist").hidden = !hist;
+  document.getElementById("distLegendTrend").hidden = hist;
+  hideTip();
+});
+document.getElementById("trendBucket").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  trendBucket = btn.dataset.bucket;
+  this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  buildTrend();
+  applyFilters();
+});
+
 /* ---------- filters / search / tabs ---------- */
 let starFilter = "all";
 const qInput = document.getElementById("q");
@@ -1109,6 +1278,11 @@ function applyFilters() {
   document.getElementById("rrCount").textContent = rrVisible + " / " + rrCurrent.length + " 角色";
   document.getElementById("rrEmpty").style.display = rrVisible ? "none" : "block";
   document.getElementById("rrScroll").style.display = rrVisible ? "" : "none";
+
+  document.querySelectorAll("#trendGrid .trend-pt").forEach(function (g) {
+    const okQ = !tokens.length || tokens.some(function (t) { return g.dataset.name.toLowerCase().indexOf(t) !== -1; });
+    g.classList.toggle("dim", !okQ);
+  });
 
   document.querySelectorAll(".pseg").forEach(function (seg) {
     const star = seg.dataset.k.slice(-1);
