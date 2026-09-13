@@ -6,7 +6,7 @@
 
 - `data/UP.json`：唯一数据源。每条 = 一个版本阶段（上/中/下）：
   `version`、`phase`、`start`、`end`、`banners[{name, five_star}]`、`four_star[]`、`mixed_banner{name, region, five_star, four_star}|null`
-- `index.html`：祈愿星历页面，由 `visualize.py` 生成（勿手改），随仓库提交、经 GitHub Pages 发布（仓库 Settings → Pages → main 根目录）
+- `index.html`：祈愿星历页面，由 `visualize.py` 生成（勿手改），随仓库提交，经 GitHub Actions 发布（`.github/workflows/pages.yml`，push 到 main 即自动部署）
 - `genshin-up/`：Python 脚本（仅标准库），用 conda **ai 环境**运行（`D:\Software\miniconda3\envs\ai\python.exe`，常见库齐全）
   - `export_md.py`：data/UP.json → `output/UP.md`
   - `visualize.py`：data/UP.json → `index.html`（单文件交互可视化页「祈愿星历」，页面模板在 `templates/`）
