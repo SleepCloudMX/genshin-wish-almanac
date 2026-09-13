@@ -31,7 +31,8 @@ def appearances(data):
         rec = index.get(key)
         if rec is None:
             rec = {
-                "date": entry["start"], "version": entry["version"], "phase": entry["phase"],
+                "date": entry["start"], "end": entry["end"],
+                "version": entry["version"], "phase": entry["phase"],
                 "star": star, "normal": False, "mixed": False,
                 "banner": None, "mix_name": None, "four": four, "region": None,
             }

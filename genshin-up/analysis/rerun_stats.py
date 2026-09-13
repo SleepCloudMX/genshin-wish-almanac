@@ -34,8 +34,11 @@ def main():
         for name, recs in app.items():
             if recs[0]["star"] != star:
                 continue
-            dates = [common.parse_date(r["date"]) for r in recs]
-            gaps = [(b - a).days for a, b in zip(dates, dates[1:])]
+            if not any(r["normal"] for r in recs):
+                continue
+            ends = [common.parse_date(r["end"]) for r in recs]
+            starts = [common.parse_date(r["date"]) for r in recs]
+            gaps = [max(0, (starts[i] - ends[i - 1]).days - 1) for i in range(1, len(recs))]
             ongoing = (
                 recs[-1]["version"] == last["version"]
                 and recs[-1]["phase"] == last["phase"]
@@ -51,7 +54,7 @@ def main():
                 "min": min(gaps) if gaps else None,
                 "avg": (sum(gaps) / len(gaps)) if gaps else None,
                 "max": max(gaps) if gaps else None,
-                "waiting": "UP 中" if ongoing else str((today - dates[-1]).days),
+                "waiting": "UP 中" if ongoing else str((today - ends[-1]).days),
                 "mixed": sum(1 for r in recs if r["mixed"]),
             })
         rows.sort(key=lambda r: (-r["reruns"], r["first"], r["name"]))
@@ -72,7 +75,8 @@ def main():
         [
             "# 角色复刻统计",
             "",
-            f"复刻 = 再次 UP（普通池与混池均计入）；未复刻 = 距上次 UP 至 {today.strftime('%Y/%m/%d')} 的天数，UP 中表示当前在池。",
+            f"复刻 = 再次 UP（普通池与混池均计入）；常驻角色（无普通 UP）不计入本表。",
+            f"间隔 = 上个卡池结束日 → 下个卡池开始日之间不含两端的天数；未复刻 = 距上次结束日至 {today.strftime('%Y/%m/%d')} 的天数，UP 中表示当前在池。",
             "标注：日期后缀 (混) = 仅在混池；(UP+混) = 同期普通池与混池都有。",
             "",
         ]
