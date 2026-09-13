@@ -39,9 +39,9 @@ body{
   padding:0 0 72px;
 }
 #stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-#stars i{position:absolute;border-radius:50%;background:#cfd8ea;opacity:.5}
-#stars i.tw{animation:tw 4.5s ease-in-out infinite}
-@keyframes tw{0%,100%{opacity:.15}50%{opacity:.75}}
+#stars i{position:absolute;border-radius:50%;background:#cfd8ea}
+#stars i.tw{animation:tw 5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:var(--tw-lo,.1)}50%{opacity:var(--tw-hi,.7)}}
 .wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 28px}
 
 /* ---------- hero ---------- */
@@ -1350,12 +1350,22 @@ document.getElementById("tabBar").addEventListener("click", function (e) {
 /* ---------- starfield ---------- */
 (function stars() {
   const box = document.getElementById("stars");
+  const COOL = "207,216,234", WARM = "227,207,164";
   let h = "";
-  for (let i = 0; i < 110; i++) {
-    const s = Math.random() * 1.6 + 0.6;
-    const tw = Math.random() < 0.28 ? " class=\"tw\"" : "";
-    h += "<i" + tw + ' style="left:' + (Math.random() * 100).toFixed(2) + "%;top:" + (Math.random() * 100).toFixed(2) + "%;width:" + s.toFixed(1) + "px;height:" + s.toFixed(1) + "px;opacity:" + (0.15 + Math.random() * 0.5).toFixed(2) + ";animation-delay:" + (Math.random() * 4).toFixed(1) + 's"></i>';
+  function dot(s, op, color, glow, tw) {
+    let st = "left:" + (Math.random() * 100).toFixed(2) + "%;top:" + (Math.random() * 100).toFixed(2) +
+      "%;width:" + s.toFixed(1) + "px;height:" + s.toFixed(1) + "px;opacity:" + op.toFixed(2) +
+      ";background:rgb(" + color + ");";
+    if (glow) st += "box-shadow:0 0 " + glow + "px rgba(" + color + ",.45);";
+    if (tw) {
+      st += "animation-duration:" + (3.5 + Math.random() * 3.5).toFixed(1) + "s;animation-delay:" + (Math.random() * 7).toFixed(1) +
+        "s;--tw-lo:" + (op * 0.25).toFixed(2) + ";--tw-hi:" + op.toFixed(2) + ";";
+    }
+    h += '<i class="' + (tw ? "tw" : "") + '" style="' + st + '"></i>';
   }
+  for (let i = 0; i < 80; i++) dot(0.5 + Math.random() * 0.6, 0.1 + Math.random() * 0.22, COOL, 0, false);
+  for (let i = 0; i < 30; i++) dot(1.1 + Math.random() * 0.7, 0.25 + Math.random() * 0.3, COOL, 0, Math.random() < 0.4);
+  for (let i = 0; i < 12; i++) dot(1.8 + Math.random() * 0.8, 0.55 + Math.random() * 0.3, Math.random() < 0.3 ? WARM : COOL, 6, Math.random() < 0.75);
   box.innerHTML = h;
 })();
 
