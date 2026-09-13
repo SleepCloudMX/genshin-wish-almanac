@@ -756,6 +756,8 @@ const PX_H = 250 / paceMax;
 /* ---------- rerun ---------- */
 const rrScroll = document.getElementById("rrScroll");
 const LAST = DATA[DATA.length - 1];
+const LAUNCH = DATA[0].start;
+const LAUNCH_T = d(LAUNCH);
 const STANDARD_5 = new Set(["迪卢克", "琴", "莫娜", "七七", "刻晴", "提纳里", "迪希雅", "梦见月瑞希"]);
 
 function isOngoing(c) {
@@ -799,7 +801,9 @@ function buildRerun() {
   rows.sort(function (a, b) {
     if (rrSort === "alt") {
       if (rrMetric === "first") {
-        return (b.c.events[0].t - a.c.events[0].t) || (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
+        const at = a.c.hasNormal ? a.c.events[0].t : LAUNCH_T;
+        const bt = b.c.hasNormal ? b.c.events[0].t : LAUNCH_T;
+        return (bt - at) || (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
       }
       return (b.gaps.length - a.gaps.length) || (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
     }
@@ -815,7 +819,8 @@ function buildRerun() {
     if (rrMetric === "wait") {
       txt = (r.ongoing ? "UP 中" : "<b>" + val + "</b> 天未复刻") + " · 复刻 " + cnt + " 次";
     } else if (rrMetric === "first") {
-      txt = "<b>" + Math.round(val) + "</b> 天 · " + r.c.events[0].date + " 首次 UP";
+      const fu = r.c.hasNormal ? r.c.events[0].date + " 首次 UP" : LAUNCH + " 开服角色";
+      txt = "<b>" + Math.round(val) + "</b> 天 · " + fu;
     } else {
       txt = "<b>" + Math.round(val) + "</b> 天 · 复刻 " + cnt + " 次";
     }
