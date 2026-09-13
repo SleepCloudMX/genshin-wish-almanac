@@ -289,7 +289,7 @@ footer code{font-family:var(--font-mono);color:var(--gold);font-size:11px}
       <button data-view="rerun">复刻间隔</button>
       <button data-view="distribution">分布</button>
     </div>
-    <input id="q" type="search" placeholder="搜索角色…" autocomplete="off">
+    <input id="q" type="search" placeholder="搜索角色（可多个，空格/、/, 分隔）" autocomplete="off">
   </nav>
 
   <main>
@@ -907,12 +907,15 @@ function renderDistDetail() {
 /* ---------- filters / search / tabs ---------- */
 let starFilter = "all";
 const qInput = document.getElementById("q");
+function queryTokens() {
+  return qInput.value.toLowerCase().split(/[\s,，、;；]+/).filter(Boolean);
+}
 function applyFilters() {
-  const q = qInput.value.trim().toLowerCase();
+  const tokens = queryTokens();
   let tlVisible = 0, rrVisible = 0;
   for (const r of tlRows) {
     const okStar = starFilter === "all" || r.star === starFilter;
-    const okQ = !q || r.name.toLowerCase().indexOf(q) !== -1;
+    const okQ = !tokens.length || tokens.some(function (t) { return r.name.toLowerCase().indexOf(t) !== -1; });
     const ok = okStar && okQ;
     r.el.classList.toggle("hide", !ok);
     if (ok) tlVisible++;
@@ -925,7 +928,7 @@ function applyFilters() {
 
   rrScroll.querySelectorAll(".rr-row").forEach(function (row) {
     const okStar = starFilter === "all" || row.dataset.star === starFilter;
-    const okQ = !q || row.dataset.name.toLowerCase().indexOf(q) !== -1;
+    const okQ = !tokens.length || tokens.some(function (t) { return row.dataset.name.toLowerCase().indexOf(t) !== -1; });
     const ok = okStar && okQ;
     row.classList.toggle("hide", !ok);
     if (ok) rrVisible++;
