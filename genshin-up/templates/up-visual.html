@@ -212,7 +212,7 @@ h1{
 .rr-sep{flex:none;width:1px;height:16px;background:var(--hairline);margin-right:12px}
 
 /* ---------- distribution ---------- */
-.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px;padding:20px 24px 4px}
+.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px}
 .dist-panel.hide{display:none}
 .dist-title{font-size:13px;color:var(--text);letter-spacing:.5px;margin-bottom:10px}
 .dist-stats{margin-left:12px;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
@@ -248,13 +248,17 @@ h1{
 .v-next{display:inline-block;width:4em;text-align:left}
 .dd-stats{color:var(--muted);white-space:nowrap}
 .dd-stats b{color:var(--gold)}
-.legend[hidden],.dist-grid[hidden],.dist-detail[hidden],.trend-area[hidden]{display:none}
+.legend[hidden],.dist-detail[hidden],.view-area[hidden]{display:none}
 .dist-view{align-items:center}
 .dist-view button{font-size:12px;padding:4px 14px}
 #distLegendHist,#distLegendTrend{margin-left:auto}
-.trend-area{padding:16px 24px 2px}
-.trend-bar{display:flex;margin-bottom:12px}
+.view-area{padding:16px 24px 2px}
+.view-bar{display:flex;margin-bottom:12px}
 .trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px}
+@media (max-width: 1024px){
+  .dist-grid,.trend-grid{grid-template-columns:1fr}
+  .trend-panel svg{max-width:560px;margin:0 auto}
+}
 .trend-note{padding:10px 0 18px;color:var(--muted);font-size:11.5px;letter-spacing:.03em}
 .trend-panel .dist-title{margin-bottom:6px}
 .trend-panel svg{display:block;width:100%;height:auto}
@@ -417,9 +421,17 @@ footer a svg{vertical-align:-2px;margin-right:4px}
             <span>悬浮看明细 · 点击复制</span>
           </div>
         </div>
-        <div class="dist-grid" id="distGrid"></div>
-        <div class="trend-area" id="trendArea" hidden>
-          <div class="trend-bar">
+        <div class="view-area" id="distArea">
+          <div class="view-bar">
+            <div class="rr-toggle" id="histBucket">
+              <button data-hmode="gap" class="on">逐次</button>
+              <button data-hmode="avg">平均</button>
+            </div>
+          </div>
+          <div class="dist-grid" id="distGrid"></div>
+        </div>
+        <div class="view-area" id="trendArea" hidden>
+          <div class="view-bar">
             <div class="rr-toggle" id="trendBucket">
               <button data-bucket="rerun" class="on">按复刻年份</button>
               <button data-bucket="debut">按首发年份</button>
@@ -1007,10 +1019,12 @@ function distRowHtml(p, pt) {
     '<span class="dd-dates">' + pt.firstEv.date + " → " + pt.lastEv.date + "</span></div>";
 }
 
-(function buildDistribution() {
+let histMode = "gap";
+function buildDistribution() {
   const grid = document.getElementById("distGrid");
   let h = "";
   for (const p of distPanels) {
+    if (p.mode !== histMode) continue;
     const pts = distPoints(p);
     const vals = pts.map(function (x) { return distValue(p, x); });
     const counts = new Array(NBINS).fill(0);
@@ -1044,7 +1058,8 @@ function distRowHtml(p, pt) {
     h += "</div>";
   }
   grid.innerHTML = h;
-})();
+}
+buildDistribution();
 
 const distState = { sel: null };
 const distGrid = document.getElementById("distGrid");
@@ -1232,7 +1247,7 @@ document.getElementById("distView").addEventListener("click", function (e) {
   distView = btn.dataset.dview;
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
   const hist = distView === "hist";
-  document.getElementById("distGrid").hidden = !hist;
+  document.getElementById("distArea").hidden = !hist;
   document.querySelector(".dist-detail").hidden = !hist;
   document.getElementById("trendArea").hidden = hist;
   document.getElementById("distLegendHist").hidden = !hist;
@@ -1246,6 +1261,17 @@ document.getElementById("trendBucket").addEventListener("click", function (e) {
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
   buildTrend();
   applyFilters();
+});
+document.getElementById("histBucket").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  histMode = btn.dataset.hmode;
+  this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  distState.sel = null;
+  buildDistribution();
+  renderDistDetail();
+  applyFilters();
+  hideTip();
 });
 
 /* ---------- filters / search / tabs ---------- */
