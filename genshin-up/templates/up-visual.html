@@ -527,7 +527,7 @@ function eventsTip(c) {
   const st = c.star === "5" ? "五星" : "四星";
   let h = '<div class="t-name">' + esc(c.name) + '<span class="t-star">' + st + "（共 UP " + c.events.length + " 次）</span></div>";
   for (const r of upTimeline(c)) {
-    h += '<div class="t-line">· <span class="t-date">' + r.date + '</span><span class="t-ver">' + esc(r.ver) + '</span><span class="t-tag">（' + r.tag + "）</span></div>";
+    h += '<div class="t-line">· <span class="t-date">' + r.date + '</span><span class="t-ver">' + esc(r.ver) + '</span><span class="t-tag">' + r.tag + "</span></div>";
   }
   h += '<div class="t-line t-status">' + upStatus(c) + "</div>";
   h += '<div class="t-meta">点击复制</div>';
@@ -536,7 +536,7 @@ function eventsTip(c) {
 function eventsText(c) {
   const st = c.star === "5" ? "五星" : "四星";
   const out = [c.name + " · " + st + "（共 UP " + c.events.length + " 次）"];
-  for (const r of upTimeline(c)) out.push("· " + r.date + " " + r.ver + "（" + r.tag + "）");
+  for (const r of upTimeline(c)) out.push("· " + r.date + " " + r.ver + " " + r.tag);
   out.push(upStatus(c));
   return out.join("\n");
 }
