@@ -40,8 +40,10 @@ def main():
             f"| {entry['version']} {entry['phase']} | {mixed['name']} | {region} | "
             f"{' '.join(mixed['five_star'])} | {' '.join(mixed['four_star'])} |"
         )
-    (common.ROOT / "UP.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"UP.md 已生成：{len(data)} 期卡池")
+    out = common.ROOT / "output" / "UP.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"written: {out.relative_to(common.ROOT)}（{len(data)} 期卡池）")
 
 
 if __name__ == "__main__":
