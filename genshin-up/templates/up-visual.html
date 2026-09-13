@@ -199,6 +199,7 @@ h1{
 .rr-bar.b5{background:linear-gradient(90deg,rgba(211,188,142,.25),var(--gold))}
 .rr-bar.b4{background:linear-gradient(90deg,rgba(159,178,200,.22),var(--silver))}
 .rr-row:hover .rr-bar{filter:brightness(1.25)}
+.rr-row.first .rr-val{flex:0 0 195px}
 .rr-val{flex:0 0 150px;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
 .rr-val b{color:var(--gold);font-weight:600}
 .rr-val .rr-cnt{color:var(--gold);font-weight:600}
@@ -362,11 +363,12 @@ footer a svg{vertical-align:-2px;margin-right:4px}
               <button data-metric="min">最短</button>
               <button data-metric="max">最长</button>
               <button data-metric="wait">未复刻</button>
+              <button data-metric="first">首复</button>
             </div>
             <div class="rr-toggle rr-sort" id="rrSort">
               <span class="rr-sep" aria-hidden="true"></span>
               <button data-sort="days" class="on" title="按时间排序（默认）">按时间</button>
-              <button data-sort="count" title="按复刻次数排序（从多到少）">按次数</button>
+              <button data-sort="alt" title="按复刻次数排序（从多到少）">按次数</button>
             </div>
           </div>
           <span class="count" id="rrCount"></span>
@@ -780,6 +782,7 @@ for (const c of list) {
     avg: gaps.length ? gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length : null,
     min: gaps.length ? Math.min.apply(null, gaps) : null,
     max: gaps.length ? Math.max.apply(null, gaps) : null,
+    first: gaps.length ? gaps[0] : null,
     wait: ongoing ? 0 : waitDays(c),
     ongoing: ongoing,
   });
@@ -794,7 +797,10 @@ function buildRerun() {
   let rrMax = 1;
   for (const r of rows) rrMax = Math.max(rrMax, rrValue(r));
   rows.sort(function (a, b) {
-    if (rrSort === "count") {
+    if (rrSort === "alt") {
+      if (rrMetric === "first") {
+        return (b.c.events[0].t - a.c.events[0].t) || (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
+      }
       return (b.gaps.length - a.gaps.length) || (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
     }
     return (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
@@ -805,10 +811,15 @@ function buildRerun() {
     const val = rrValue(r);
     const w = Math.max(1.5, val / rrMax * 100);
     const cnt = '<span class="rr-cnt">' + r.gaps.length + "</span>";
-    const txt = (rrMetric === "wait"
-      ? (r.ongoing ? "UP 中" : "<b>" + val + "</b> 天未复刻")
-      : "<b>" + Math.round(val) + "</b> 天") + " · 复刻 " + cnt + " 次";
-    h += '<div class="rr-row" data-star="' + r.c.star + '" data-name="' + esc(r.c.name) + '" style="--i:' + Math.min(i, 100) + '">';
+    let txt;
+    if (rrMetric === "wait") {
+      txt = (r.ongoing ? "UP 中" : "<b>" + val + "</b> 天未复刻") + " · 复刻 " + cnt + " 次";
+    } else if (rrMetric === "first") {
+      txt = "<b>" + Math.round(val) + "</b> 天 · " + r.c.events[0].date + " 首次 UP";
+    } else {
+      txt = "<b>" + Math.round(val) + "</b> 天 · 复刻 " + cnt + " 次";
+    }
+    h += '<div class="rr-row' + (rrMetric === "first" ? " first" : "") + '" data-star="' + r.c.star + '" data-name="' + esc(r.c.name) + '" style="--i:' + Math.min(i, 100) + '">';
     h += '<div class="rr-name"><span class="' + (r.c.star === "5" ? "n5" : "n4") + '">' + esc(r.c.name) + "</span></div>";
     h += '<div class="rr-track"><div class="rr-bar ' + (r.c.star === "5" ? "b5" : "b4") + '" style="width:' + w + '%"></div></div>';
     h += '<div class="rr-val">' + txt + "</div>";
@@ -823,11 +834,22 @@ function buildRerun() {
   });
 }
 buildRerun();
+function updateSortLabel() {
+  const b = document.querySelector('#rrSort button[data-sort="alt"]');
+  if (rrMetric === "first") {
+    b.textContent = "按新出";
+    b.title = "按首次 UP 时间排序（新出在前）";
+  } else {
+    b.textContent = "按次数";
+    b.title = "按复刻次数排序（从多到少）";
+  }
+}
 document.getElementById("rrToggle").addEventListener("click", function (e) {
   const btn = e.target.closest("button");
   if (!btn) return;
   rrMetric = btn.dataset.metric;
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  updateSortLabel();
   buildRerun();
   applyFilters();
 });
