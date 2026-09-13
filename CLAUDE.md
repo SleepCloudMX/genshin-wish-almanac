@@ -7,8 +7,9 @@
 - `data/UP.json`：唯一数据源。每条 = 一个版本阶段（上/中/下）：
   `version`、`phase`、`start`、`end`、`banners[{name, five_star}]`、`four_star[]`、`mixed_banner{name, region, five_star, four_star}|null`
 - `UP.md`：由脚本生成，**勿手改**。改完数据跑 `python genshin-up/export_md.py`
-- `genshin-up/`：Python 脚本（仅标准库）
+- `genshin-up/`：Python 脚本（仅标准库），用 conda **ai 环境**运行（`D:\Software\miniconda3\envs\ai\python.exe`，常见库齐全）
   - `export_md.py`：data/UP.json → UP.md
+  - `visualize.py`：data/UP.json → `output/viz/up-visual.html`（单文件交互可视化页，页面模板在 `templates/`）
   - `analysis/`：分析脚本，输出到 `output/<task>/`
 - `output/`：脚本产物（已 gitignore）
 - `docs/ai-output/`：AI 产出文档，**独立 git 仓库**，本仓库已 gitignore
@@ -16,6 +17,7 @@
 ## 常用命令
 
 - 重新生成 UP.md：`python genshin-up/export_md.py`
+- 生成可视化页：`python genshin-up/visualize.py` → 浏览器打开 `output/viz/up-visual.html`
 - 跑分析：`python genshin-up/analysis/<script>.py`
 
 ## 数据口径

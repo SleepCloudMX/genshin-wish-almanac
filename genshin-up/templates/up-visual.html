@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>原神 UP 编年史</title>
+<style>
+:root{
+  --bg:#0a0e1a;
+  --panel:#121a2c;
+  --panel-2:#0e1524;
+  --text:#e9e5d9;
+  --muted:#8d93a5;
+  --gold:#d3bc8e;
+  --gold-bright:#f2ddab;
+  --bronze:#a8865a;
+  --silver:#9fb2c8;
+  --slate:#5d6b85;
+  --violet:#b48ce0;
+  --hairline:rgba(211,188,142,.18);
+  --hairline-soft:rgba(211,188,142,.09);
+  --font-display:"STZhongsong","Source Han Serif SC","Noto Serif SC","SimSun",serif;
+  --font-body:"Microsoft YaHei UI","PingFang SC","Noto Sans SC",sans-serif;
+  --font-mono:"Consolas","Cascadia Mono","Sarasa Mono SC",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{color-scheme:dark}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(1100px 700px at 72% -12%, #17223d 0%, transparent 62%),
+    radial-gradient(900px 620px at 6% 108%, #191330 0%, transparent 58%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:13.5px;
+  line-height:1.65;
+  padding:0 0 72px;
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#stars i{position:absolute;border-radius:50%;background:#cfd8ea;opacity:.5}
+#stars i.tw{animation:tw 4.5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.15}50%{opacity:.75}}
+.wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 28px}
+
+/* ---------- hero ---------- */
+.hero{padding:58px 0 26px;text-align:center;position:relative;z-index:1}
+.hero-kicker{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.42em;
+  color:var(--muted);text-indent:.42em;text-transform:uppercase;
+}
+h1{
+  font-family:var(--font-display);font-weight:600;font-size:40px;
+  letter-spacing:.18em;text-indent:.18em;margin:14px 0 6px;
+  background:linear-gradient(180deg,#f6e8c4 8%,var(--gold) 55%,#8d7346 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 18px rgba(211,188,142,.22));
+}
+.hero-sub{color:var(--muted);font-size:12.5px;letter-spacing:.06em}
+.hero-sub b{color:var(--gold);font-weight:600}
+.hero-rule{
+  width:280px;height:1px;margin:22px auto 0;
+  background:linear-gradient(90deg,transparent,var(--hairline) 30%,var(--hairline) 70%,transparent);
+  position:relative;
+}
+.hero-rule::after{
+  content:"✦";position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);
+  color:var(--gold);font-size:11px;background:var(--bg);padding:0 10px;
+}
+
+/* ---------- controls ---------- */
+.controls{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  margin:26px 0 22px;position:relative;z-index:1;
+}
+.seg,.tabs{display:flex;gap:4px;padding:4px;border:1px solid var(--hairline-soft);border-radius:999px;background:rgba(14,21,36,.75)}
+.seg button,.tabs button{
+  border:0;background:transparent;color:var(--muted);font-family:var(--font-body);
+  font-size:12.5px;letter-spacing:.08em;padding:6px 16px;border-radius:999px;cursor:pointer;
+  transition:color .18s,background .18s,box-shadow .18s;
+}
+.seg button:hover,.tabs button:hover{color:var(--text)}
+.seg button.on{background:rgba(211,188,142,.14);color:var(--gold-bright);box-shadow:inset 0 0 0 1px var(--hairline)}
+.tabs button.on{background:rgba(211,188,142,.14);color:var(--gold-bright);box-shadow:inset 0 0 0 1px var(--hairline)}
+#q{
+  background:rgba(14,21,36,.75);border:1px solid var(--hairline-soft);border-radius:999px;
+  color:var(--text);font-family:var(--font-body);font-size:12.5px;padding:8px 18px;width:180px;outline:none;
+  transition:border-color .18s,width .25s;
+}
+#q:focus{border-color:var(--hairline);width:220px}
+#q::placeholder{color:var(--muted)}
+
+/* ---------- panels ---------- */
+.view{animation:viewIn .35s ease both}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.panel{
+  background:linear-gradient(180deg,rgba(20,28,47,.92),rgba(14,20,34,.92));
+  border:1px solid var(--hairline);border-radius:16px;
+  box-shadow:0 24px 70px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.03);
+  overflow:hidden;
+}
+.panel-head{
+  display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+  padding:18px 24px 14px;border-bottom:1px solid var(--hairline-soft);
+}
+.panel-head h2{
+  font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:.2em;color:var(--gold);
+}
+.panel-head .count{margin-left:auto;font-family:var(--font-mono);font-size:11.5px;color:var(--muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.lg-dot.d5{background:var(--gold)}
+.lg-dot.d4{background:var(--silver)}
+.lg-dot.mix{background:transparent;border:2px solid var(--violet)}
+.lg-line{width:18px;height:1px;background:rgba(211,188,142,.4);display:inline-block}
+
+/* ---------- timeline ---------- */
+.tl-scroll{overflow:auto;max-height:70vh;position:relative}
+.tl-scroll::-webkit-scrollbar{height:10px;width:10px}
+.tl-scroll::-webkit-scrollbar-thumb{background:#2a3350;border-radius:6px;border:2px solid var(--panel)}
+.tl-scroll::-webkit-scrollbar-track{background:transparent}
+.tl-axis{position:sticky;top:0;z-index:6;display:flex;height:30px;background:var(--panel);border-bottom:1px solid var(--hairline-soft)}
+.tl-axis .gutter{flex:0 0 128px;position:sticky;left:0;z-index:7;background:var(--panel);border-right:1px solid var(--hairline-soft)}
+.tl-axis .plot{position:relative;flex:0 0 auto}
+.tl-axis .yr{position:absolute;top:6px;font-family:var(--font-mono);font-size:10.5px;color:var(--gold);opacity:.75;letter-spacing:.08em;transform:translateX(-50%)}
+.tl-axis .yr::before{content:"";position:absolute;left:50%;top:2px;width:1px;height:8px;background:var(--hairline)}
+.tl-axis .yr span{position:relative;top:12px}
+.tl-body{position:relative}
+.tl-grid{position:absolute;top:0;bottom:0;left:128px;z-index:0;pointer-events:none}
+.tl-grid .gl{position:absolute;top:0;bottom:0;width:1px;background:var(--hairline-soft)}
+.tl-grid .gl.mid{background:rgba(211,188,142,.045)}
+.tl-grid .gl.today{background:linear-gradient(180deg,rgba(180,140,224,.5),rgba(180,140,224,.12));width:1px}
+.tl-axis .today-lb{position:absolute;top:3px;transform:translateX(-50%);font-size:10px;color:var(--violet);font-family:var(--font-mono);letter-spacing:.1em;background:var(--panel);padding:1px 9px;border:1px solid rgba(180,140,224,.35);border-radius:999px;white-space:nowrap;z-index:8}
+.tl-row{display:flex;height:26px;position:relative;animation:rise .5s ease both;animation-delay:calc(var(--i)*7ms)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tl-name{
+  flex:0 0 128px;position:sticky;left:0;z-index:3;background:var(--panel);
+  border-right:1px solid var(--hairline-soft);
+  display:flex;align-items:center;gap:8px;padding-left:14px;cursor:pointer;
+  transition:background .15s;
+}
+.tl-row:hover .tl-name{background:#182238}
+.tl-name .pip{width:6px;height:6px;border-radius:50%;flex:0 0 6px}
+.tl-name .nm{font-size:12.5px;color:var(--text);white-space:nowrap}
+.tl-row.resident .tl-name .nm{color:var(--muted)}
+.tl-row.resident .tl-name .nm::after{content:"常驻";font-size:9px;color:var(--muted);border:1px solid var(--hairline-soft);border-radius:4px;padding:0 4px;margin-left:6px}
+.tl-plot{position:relative;flex:0 0 auto;cursor:pointer}
+.tl-link{position:absolute;top:50%;height:1px;transform:translateY(-50%)}
+.tl-link.l5{background:rgba(211,188,142,.30)}
+.tl-link.l4{background:rgba(159,178,200,.22)}
+.tl-dot{
+  position:absolute;top:50%;border-radius:50%;transform:translate(-50%,-50%);
+  transition:transform .15s,box-shadow .15s;z-index:2;
+}
+.tl-dot.f5{width:10px;height:10px;background:var(--gold);box-shadow:0 0 9px rgba(211,188,142,.55)}
+.tl-dot.f4{width:8px;height:8px;background:var(--silver);box-shadow:0 0 6px rgba(159,178,200,.4)}
+.tl-dot.mix{background:transparent;border:2px solid var(--violet);box-shadow:0 0 8px rgba(180,140,224,.45)}
+.tl-dot.mx5{width:10px;height:10px}
+.tl-dot.mx4{width:8px;height:8px}
+.tl-row:hover .tl-dot{transform:translate(-50%,-50%) scale(1.25)}
+.tl-body.has-sel .tl-row:not(.sel){opacity:.18;filter:saturate(.4)}
+.tl-body.has-sel .tl-row.sel{background:rgba(211,188,142,.05)}
+.tl-row{transition:opacity .2s,filter .2s,background .2s}
+.tl-row.hide,.rr-row.hide{display:none}
+.empty-hint{padding:26px 24px;color:var(--muted);font-size:12.5px;display:none}
+
+/* ---------- pace ---------- */
+.pace-scroll{overflow-x:auto;padding:26px 22px 8px}
+.pace-chart{display:flex;align-items:flex-end;gap:9px;min-width:max-content}
+.pcol{position:relative;display:flex;flex-direction:column;align-items:center;width:26px;padding-bottom:42px}
+.pwrap{height:250px;display:flex;flex-direction:column-reverse;align-items:center;width:100%}
+.pseg{width:19px;opacity:.95;transition:opacity .18s,filter .18s;cursor:default}
+.pseg:first-child{border-radius:0 0 3px 3px}
+.pcol:hover .pseg{filter:brightness(1.18)}
+.pseg.s5{background:linear-gradient(180deg,#e8c987,#c9a86a)}
+.pseg.s4{background:linear-gradient(180deg,#b9c8dc,#8d9db4)}
+.pseg.r5{background:linear-gradient(180deg,#8a6f47,#6b5636)}
+.pseg.r4{background:linear-gradient(180deg,#4d5a74,#3c4760)}
+.pseg.hide{display:none}
+.ptotal{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:3px}
+.pver{position:absolute;bottom:8px;left:50%;transform:translateX(-50%) rotate(-55deg);font-family:var(--font-mono);font-size:10px;color:var(--muted);white-space:nowrap}
+.pmix{position:absolute;top:-20px;left:50%;transform:translateX(-50%);color:var(--violet);font-size:12px;text-shadow:0 0 8px rgba(180,140,224,.6)}
+.pace-legend{padding:0 24px 18px;display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.pace-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* ---------- rerun ---------- */
+.rr-scroll{overflow:auto;max-height:70vh;padding:10px 24px 18px}
+.rr-scroll::-webkit-scrollbar{height:10px;width:10px}
+.rr-scroll::-webkit-scrollbar-thumb{background:#2a3350;border-radius:6px;border:2px solid var(--panel)}
+.rr-row{display:flex;align-items:center;gap:14px;height:30px;animation:rise .45s ease both;animation-delay:calc(var(--i)*6ms)}
+.rr-name{flex:0 0 96px;text-align:right;font-size:12.5px;white-space:nowrap;overflow:hidden}
+.rr-name .n5{color:var(--gold)}
+.rr-name .n4{color:var(--silver)}
+.rr-track{flex:1;position:relative;height:14px;background:rgba(255,255,255,.025);border-radius:4px;overflow:hidden}
+.rr-bar{position:absolute;left:0;top:0;bottom:0;border-radius:4px;transition:filter .15s}
+.rr-bar.b5{background:linear-gradient(90deg,rgba(211,188,142,.25),var(--gold))}
+.rr-bar.b4{background:linear-gradient(90deg,rgba(159,178,200,.22),var(--silver))}
+.rr-row:hover .rr-bar{filter:brightness(1.25)}
+.rr-val{flex:0 0 150px;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.rr-val b{color:var(--gold);font-weight:600}
+.rr-toggle{display:flex;gap:4px;margin-left:auto}
+.rr-toggle button{border:1px solid var(--hairline-soft);background:transparent;color:var(--muted);font-size:11.5px;padding:3px 12px;border-radius:999px;cursor:pointer;font-family:var(--font-body)}
+.rr-toggle button.on{color:var(--gold-bright);border-color:var(--hairline);background:rgba(211,188,142,.1)}
+
+/* ---------- tooltip / footer ---------- */
+#tip{
+  position:fixed;z-index:99;pointer-events:none;max-width:340px;
+  background:rgba(10,15,27,.96);border:1px solid rgba(211,188,142,.32);border-radius:10px;
+  box-shadow:0 16px 44px rgba(0,0,0,.6);padding:10px 13px;font-size:12px;line-height:1.7;
+}
+#tip .t-name{font-family:var(--font-display);font-size:14px;letter-spacing:.12em;color:var(--gold-bright)}
+#tip .t-star{font-size:10.5px;color:var(--muted);margin-left:6px;letter-spacing:.05em}
+#tip .t-meta{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:2px}
+#tip .t-banner{color:var(--text)}
+#tip .t-four{color:var(--muted);font-size:11.5px}
+#tip .t-mix{color:var(--violet)}
+#tip em{font-style:normal;color:var(--gold)}
+footer{
+  text-align:center;margin-top:34px;color:var(--muted);font-size:11.5px;letter-spacing:.05em;position:relative;z-index:1;
+}
+footer code{font-family:var(--font-mono);color:var(--gold);font-size:11px}
+.err{margin:40px auto;max-width:640px;border:1px solid rgba(224,120,120,.5);border-radius:12px;padding:18px 22px;color:#e8b4b4;font-family:var(--font-mono);font-size:12px;white-space:pre-wrap}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div id="stars" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="hero-kicker">Genshin Impact · Wish Chronicle</div>
+  <h1>原神 UP 编年史</h1>
+  <p class="hero-sub" id="heroSub"></p>
+  <div class="hero-rule"></div>
+</header>
+
+<div class="wrap">
+  <nav class="controls">
+    <div class="seg" id="starFilter" role="group" aria-label="星级筛选">
+      <button data-star="all" class="on">全部</button>
+      <button data-star="5">五星</button>
+      <button data-star="4">四星</button>
+    </div>
+    <div class="tabs" id="tabBar" role="tablist">
+      <button data-view="timeline" class="on">时间线</button>
+      <button data-view="pace">版本节奏</button>
+      <button data-view="rerun">复刻间隔</button>
+    </div>
+    <input id="q" type="search" placeholder="搜索角色…" autocomplete="off">
+  </nav>
+
+  <main>
+    <section id="view-timeline" class="view">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>UP 时间线</h2>
+          <div class="legend">
+            <span><i class="lg-dot d5"></i>五星 UP</span>
+            <span><i class="lg-dot d4"></i>四星 UP</span>
+            <span><i class="lg-dot mix"></i>混池</span>
+            <span><i class="lg-line"></i>同一角色</span>
+            <span>点击行可锁定高亮</span>
+          </div>
+          <span class="count" id="tlCount"></span>
+        </div>
+        <div class="tl-scroll" id="tlScroll">
+          <div class="tl-axis"><div class="gutter"></div><div class="plot" id="tlAxis"></div></div>
+          <div class="tl-body" id="tlBody"><div class="tl-grid" id="tlGrid"></div></div>
+        </div>
+        <div class="empty-hint" id="tlEmpty">没有匹配的角色</div>
+      </div>
+    </section>
+
+    <section id="view-pace" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>版本节奏</h2>
+          <div class="legend">
+            <span><i class="lg-dot d5"></i>新五星</span>
+            <span><i class="lg-dot d4"></i>新四星</span>
+            <span>▮ 复刻按深浅区分</span>
+            <span>✦ 该版本有混池</span>
+          </div>
+          <span class="count" id="paceCount"></span>
+        </div>
+        <div class="pace-scroll"><div class="pace-chart" id="paceChart"></div></div>
+        <div class="pace-legend">
+          <span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:linear-gradient(180deg,#e8c987,#c9a86a)"></i>新五星</span>
+          <span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:linear-gradient(180deg,#b9c8dc,#8d9db4)"></i>新四星</span>
+          <span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:linear-gradient(180deg,#8a6f47,#6b5636)"></i>复刻五星</span>
+          <span><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:linear-gradient(180deg,#4d5a74,#3c4760)"></i>复刻四星</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-rerun" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>复刻间隔</h2>
+          <div class="legend"><span>两次 UP 之间的天数（不含混池）</span></div>
+          <div class="rr-toggle" id="rrToggle">
+            <button data-metric="avg" class="on">平均</button>
+            <button data-metric="max">最长</button>
+          </div>
+          <span class="count" id="rrCount"></span>
+        </div>
+        <div class="rr-scroll" id="rrScroll"></div>
+        <div class="empty-hint" id="rrEmpty">没有匹配的角色</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    数据 <code>data/UP.json</code> · 页面由 <code>genshin-up/visualize.py</code> 生成于 __GENERATED_AT__ · 来源 TeyvatGuide / bwiki
+  </footer>
+</div>
+
+<div id="tip" hidden></div>
+
+<script>
+(function () {
+"use strict";
+const DATA = __UP_DATA__;
+const DAY = 86400000;
+const PX_PER_DAY = 0.62;
+const MX5 = "✦";
+
+function d(s) { return Date.parse(s.replace(/\//g, "-") + "T00:00:00+08:00"); }
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function joinNames(a) {
+  if (!a || !a.length) return "—";
+  if (a.length <= 14) return a.join(" ");
+  return a.slice(0, 14).join(" ") + " 等 " + a.length + " 人";
+}
+
+try {
+
+/* ---------- model ---------- */
+const chars = new Map();
+function ev(name, star, o) {
+  if (!chars.has(name)) chars.set(name, { name: name, star: star, events: [] });
+  chars.get(name).events.push(o);
+}
+for (const e of DATA) {
+  const bannerLabel = e.banners.map(function (b) { return b.name; }).join(" / ");
+  for (const b of e.banners) {
+    ev(b.five_star, "5", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: b.name, four: e.four_star, mixed: false });
+  }
+  for (const n of e.four_star) {
+    ev(n, "4", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: bannerLabel, four: e.four_star, mixed: false });
+  }
+  const m = e.mixed_banner;
+  if (m) {
+    for (const n of m.five_star) {
+      ev(n, "5", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: m.name, four: m.four_star, mixed: true, region: m.region });
+    }
+    for (const n of m.four_star) {
+      ev(n, "4", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: m.name, four: m.four_star, mixed: true, region: m.region });
+    }
+  }
+}
+const list = Array.from(chars.values());
+for (const c of list) {
+  c.events.sort(function (a, b) { return a.t - b.t; });
+  c.normal = c.events.filter(function (x) { return !x.mixed; });
+  c.mixed = c.events.filter(function (x) { return x.mixed; });
+  let firstNormal = null;
+  for (const x of c.events) {
+    if (!x.mixed) { x.isNew = firstNormal === null; firstNormal = x; }
+  }
+  c.hasNormal = c.normal.length > 0;
+  c.first = c.hasNormal ? c.normal[0] : c.mixed[0];
+  c.key = (c.hasNormal ? 0 : 1) * 1e15 + c.first.t;
+}
+list.sort(function (a, b) {
+  if (a.key !== b.key) return a.key - b.key;
+  if (a.star !== b.star) return a.star === "5" ? -1 : 1;
+  return a.name.localeCompare(b.name, "zh");
+});
+
+let minT = Infinity, maxT = -Infinity;
+for (const c of list) for (const x of c.events) { if (x.t < minT) minT = x.t; if (x.t > maxT) maxT = x.t; }
+maxT = Math.max(maxT, d(DATA[DATA.length - 1].end));
+minT -= 12 * DAY; maxT += 16 * DAY;
+const plotW = Math.round((maxT - minT) / DAY * PX_PER_DAY) + 30;
+function xOf(t) { return (t - minT) / DAY * PX_PER_DAY; }
+
+/* ---------- hero ---------- */
+const n5 = list.filter(function (c) { return c.star === "5"; }).length;
+const n4 = list.filter(function (c) { return c.star === "4"; }).length;
+const nMix = DATA.filter(function (e) { return e.mixed_banner; }).length;
+document.getElementById("heroSub").innerHTML =
+  "角色活动祈愿 · <b>" + DATA[0].start + " — " + DATA[DATA.length - 1].end + "</b> · <b>" + DATA.length + "</b> 期 · <b>" + n5 + "</b> 五星 / <b>" + n4 + "</b> 四星 · 混池 <b>" + nMix + "</b> 期";
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById("tip");
+function showTip(html, e) {
+  tip.innerHTML = html;
+  tip.hidden = false;
+  placeTip(e);
+}
+function placeTip(e) {
+  const pad = 14;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - pad;
+  tip.style.left = Math.max(8, x) + "px";
+  tip.style.top = Math.max(8, y) + "px";
+}
+function hideTip() { tip.hidden = true; }
+document.addEventListener("mousemove", function (e) { if (!tip.hidden) placeTip(e); });
+
+function eventTip(c, x) {
+  const st = c.star === "5" ? "五星" : "四星";
+  let h = '<div class="t-name">' + esc(c.name) + '<span class="t-star">' + st + "</span></div>";
+  h += '<div class="t-meta">' + x.date + " · " + x.version + " " + x.phase + "</div>";
+  if (x.mixed) {
+    h += '<div class="t-banner t-mix">「' + esc(x.banner) + "」混池" + (x.region ? "（" + esc(x.region) + "）" : "（跨地区）") + "</div>";
+  } else {
+    h += '<div class="t-banner">「' + esc(x.banner) + "」" + (x.isNew ? " <em>首发</em>" : "") + "</div>";
+  }
+  if (c.star === "5" && x.four && x.four.length) {
+    h += '<div class="t-four">四星：' + esc(joinNames(x.four)) + "</div>";
+  }
+  return h;
+}
+
+/* ---------- timeline ---------- */
+const tlAxis = document.getElementById("tlAxis");
+const tlBody = document.getElementById("tlBody");
+const tlGrid = document.getElementById("tlGrid");
+tlAxis.style.width = plotW + "px";
+
+(function buildAxis() {
+  const now = Date.now();
+  const hasToday = now >= minT && now <= maxT;
+  let h = "";
+  const y0 = new Date(minT).getFullYear(), y1 = new Date(maxT).getFullYear();
+  for (let y = y0; y <= y1; y++) {
+    const t = d(y + "/01/01");
+    if (t < minT || t > maxT) continue;
+    h += '<div class="yr" style="left:' + xOf(t) + 'px"><span>' + y + "</span></div>";
+  }
+  if (hasToday) h += '<div class="today-lb" style="left:' + xOf(now) + 'px">今天</div>';
+  tlAxis.innerHTML = h;
+
+  let g = "";
+  for (let y = y0; y <= y1; y++) {
+    let t = d(y + "/01/01");
+    if (t >= minT && t <= maxT) g += '<div class="gl" style="left:' + xOf(t) + 'px"></div>';
+    t = d(y + "/07/01");
+    if (t >= minT && t <= maxT) g += '<div class="gl mid" style="left:' + xOf(t) + 'px"></div>';
+  }
+  if (hasToday) g += '<div class="gl today" style="left:' + xOf(now) + 'px"></div>';
+  tlGrid.style.width = plotW + "px";
+  tlGrid.innerHTML = g;
+})();
+
+const tlRows = [];
+list.forEach(function (c, i) {
+  const row = document.createElement("div");
+  row.className = "tl-row" + (c.hasNormal ? "" : " resident");
+  row.dataset.star = c.star;
+  row.dataset.name = c.name;
+  row.style.setProperty("--i", Math.min(i, 90));
+
+  const nameCell = document.createElement("div");
+  nameCell.className = "tl-name";
+  nameCell.innerHTML = '<i class="pip" style="background:' + (c.star === "5" ? "var(--gold)" : "var(--silver)") + '"></i><span class="nm">' + esc(c.name) + "</span>";
+  row.appendChild(nameCell);
+
+  const plot = document.createElement("div");
+  plot.className = "tl-plot";
+  plot.style.width = plotW + "px";
+
+  for (let k = 0; k < c.events.length - 1; k++) {
+    const a = c.events[k], b = c.events[k + 1];
+    if (b.t - a.t < DAY * 3) continue;
+    const link = document.createElement("i");
+    link.className = "tl-link " + (c.star === "5" ? "l5" : "l4");
+    link.style.left = xOf(a.t) + "px";
+    link.style.width = (xOf(b.t) - xOf(a.t)) + "px";
+    plot.appendChild(link);
+  }
+  for (const x of c.events) {
+    const dot = document.createElement("i");
+    dot.className = "tl-dot " + (x.mixed ? "mix " + (c.star === "5" ? "mx5" : "mx4") : (c.star === "5" ? "f5" : "f4"));
+    dot.style.left = xOf(x.t) + "px";
+    dot.addEventListener("mouseenter", function (e) { showTip(eventTip(c, x), e); });
+    dot.addEventListener("mouseleave", hideTip);
+    plot.appendChild(dot);
+  }
+  row.appendChild(plot);
+
+  row.addEventListener("click", function () {
+    const wasSel = row.classList.contains("sel");
+    tlBody.classList.remove("has-sel");
+    for (const r of tlRows) r.el.classList.remove("sel");
+    if (!wasSel) { row.classList.add("sel"); tlBody.classList.add("has-sel"); }
+  });
+  tlBody.appendChild(row);
+  tlRows.push({ el: row, name: c.name, star: c.star });
+});
+
+/* ---------- pace ---------- */
+const versions = [];
+const seenV = new Set();
+for (const e of DATA) { if (!seenV.has(e.version)) { seenV.add(e.version); versions.push(e.version); } }
+const pace = new Map();
+for (const v of versions) pace.set(v, { new5: [], new4: [], rerun5: [], rerun4: [], mixed: null });
+for (const c of list) {
+  for (const x of c.events) {
+    if (x.mixed) continue;
+    const s = pace.get(x.version);
+    if (!s) continue;
+    const bucket = (x.isNew ? "new" : "rerun") + c.star;
+    s[bucket].push(c.name);
+  }
+}
+for (const e of DATA) { if (e.mixed_banner) pace.get(e.version).mixed = e.mixed_banner.name; }
+let paceMax = 1;
+for (const v of versions) {
+  const s = pace.get(v);
+  paceMax = Math.max(paceMax, s.new5.length + s.new4.length + s.rerun5.length + s.rerun4.length);
+}
+const PX_H = 250 / paceMax;
+(function buildPace() {
+  const chart = document.getElementById("paceChart");
+  let h = "";
+  for (const v of versions) {
+    const s = pace.get(v);
+    const total = s.new5.length + s.new4.length + s.rerun5.length + s.rerun4.length;
+    h += '<div class="pcol" data-version="' + v + '">';
+    if (s.mixed) h += '<div class="pmix" title="混池：' + esc(s.mixed) + '">' + MX5 + "</div>";
+    h += '<div class="pwrap">';
+    h += '<div class="pseg r4" data-k="rerun4" style="height:' + s.rerun4.length * PX_H + 'px"></div>';
+    h += '<div class="pseg s4" data-k="new4" style="height:' + s.new4.length * PX_H + 'px"></div>';
+    h += '<div class="pseg r5" data-k="rerun5" style="height:' + s.rerun5.length * PX_H + 'px"></div>';
+    h += '<div class="pseg s5" data-k="new5" style="height:' + s.new5.length * PX_H + 'px"></div>';
+    h += "</div>";
+    h += '<div class="ptotal">' + (total || "") + "</div>";
+    h += '<div class="pver">' + v + "</div>";
+    h += "</div>";
+  }
+  chart.innerHTML = h;
+  const LABEL = { new5: "新五星", new4: "新四星", rerun5: "复刻五星", rerun4: "复刻四星" };
+  chart.addEventListener("mouseover", function (e) {
+    const seg = e.target.closest(".pseg");
+    if (!seg) { return; }
+    const col = seg.closest(".pcol");
+    const s = pace.get(col.dataset.version);
+    const names = s[seg.dataset.k];
+    const html = '<div class="t-name">' + col.dataset.version + '<span class="t-star">' + LABEL[seg.dataset.k] + "</span></div>" +
+      '<div class="t-four">' + (names.length ? esc(joinNames(names)) : "—") + "</div>";
+    showTip(html, e);
+  });
+  chart.addEventListener("mouseout", function (e) { if (e.target.closest(".pseg")) hideTip(); });
+  document.getElementById("paceCount").textContent = versions.length + " 个版本 · 峰值 " + paceMax + " 次 UP";
+})();
+
+/* ---------- rerun ---------- */
+const rrScroll = document.getElementById("rrScroll");
+let rrMetric = "avg";
+const rrData = [];
+for (const c of list) {
+  if (c.normal.length < 2) continue;
+  const gaps = [];
+  for (let i = 1; i < c.normal.length; i++) {
+    gaps.push(Math.round((c.normal[i].t - c.normal[i - 1].t) / DAY));
+  }
+  const avg = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length;
+  rrData.push({ c: c, gaps: gaps, avg: avg, max: Math.max.apply(null, gaps) });
+}
+let rrMax = 1;
+for (const r of rrData) rrMax = Math.max(rrMax, r.avg, r.max);
+
+function rrTip(r) {
+  let h = '<div class="t-name">' + esc(r.c.name) + '<span class="t-star">' + (r.c.star === "5" ? "五星" : "四星") + "</span></div>";
+  h += '<div class="t-meta">共 UP ' + r.c.normal.length + " 次 · 复刻 " + (r.c.normal.length - 1) + " 次</div>";
+  h += '<div class="t-four">各次间隔：' + r.gaps.join(" · ") + " 天</div>";
+  h += '<div class="t-meta">' + r.c.normal.map(function (x) { return x.date; }).join(" → ") + "</div>";
+  return h;
+}
+function buildRerun() {
+  const rows = rrData.slice().sort(function (a, b) {
+    return (b[rrMetric] - a[rrMetric]) || (a.c.key - b.c.key);
+  });
+  let h = "";
+  rows.forEach(function (r, i) {
+    const val = rrMetric === "avg" ? r.avg : r.max;
+    const w = Math.max(1.5, val / rrMax * 100);
+    h += '<div class="rr-row" data-star="' + r.c.star + '" data-name="' + esc(r.c.name) + '" style="--i:' + Math.min(i, 100) + '">';
+    h += '<div class="rr-name"><span class="' + (r.c.star === "5" ? "n5" : "n4") + '">' + esc(r.c.name) + "</span></div>";
+    h += '<div class="rr-track"><div class="rr-bar ' + (r.c.star === "5" ? "b5" : "b4") + '" style="width:' + w + '%"></div></div>';
+    h += '<div class="rr-val"><b>' + Math.round(val) + "</b> 天 · 复刻 " + (r.c.normal.length - 1) + " 次</div>";
+    h += "</div>";
+  });
+  rrScroll.innerHTML = h;
+  rrScroll.querySelectorAll(".rr-row").forEach(function (row) {
+    const r = rrData.find(function (x) { return x.c.name === row.dataset.name; });
+    row.addEventListener("mouseenter", function (e) { showTip(rrTip(r), e); });
+    row.addEventListener("mouseleave", hideTip);
+  });
+}
+buildRerun();
+document.getElementById("rrToggle").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  rrMetric = btn.dataset.metric;
+  this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  buildRerun();
+  applyFilters();
+});
+
+/* ---------- filters / search / tabs ---------- */
+let starFilter = "all";
+const qInput = document.getElementById("q");
+function applyFilters() {
+  const q = qInput.value.trim().toLowerCase();
+  let tlVisible = 0, rrVisible = 0;
+  for (const r of tlRows) {
+    const okStar = starFilter === "all" || r.star === starFilter;
+    const okQ = !q || r.name.toLowerCase().indexOf(q) !== -1;
+    const ok = okStar && okQ;
+    r.el.classList.toggle("hide", !ok);
+    if (ok) tlVisible++;
+    if (!ok) r.el.classList.remove("sel");
+  }
+  if (!tlBody.querySelector(".tl-row.sel")) tlBody.classList.remove("has-sel");
+  document.getElementById("tlCount").textContent = tlVisible + " / " + list.length + " 角色";
+  document.getElementById("tlEmpty").style.display = tlVisible ? "none" : "block";
+  document.getElementById("tlScroll").style.display = tlVisible ? "" : "none";
+
+  rrScroll.querySelectorAll(".rr-row").forEach(function (row) {
+    const okStar = starFilter === "all" || row.dataset.star === starFilter;
+    const okQ = !q || row.dataset.name.toLowerCase().indexOf(q) !== -1;
+    const ok = okStar && okQ;
+    row.classList.toggle("hide", !ok);
+    if (ok) rrVisible++;
+  });
+  document.getElementById("rrCount").textContent = rrVisible + " / " + rrData.length + " 角色（已复刻）";
+  document.getElementById("rrEmpty").style.display = rrVisible ? "none" : "block";
+  document.getElementById("rrScroll").style.display = rrVisible ? "" : "none";
+
+  document.querySelectorAll(".pseg").forEach(function (seg) {
+    const star = seg.dataset.k.slice(-1);
+    seg.classList.toggle("hide", starFilter !== "all" && star !== starFilter);
+  });
+}
+applyFilters();
+
+document.getElementById("starFilter").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  starFilter = btn.dataset.star;
+  this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  applyFilters();
+});
+qInput.addEventListener("input", applyFilters);
+
+document.getElementById("tabBar").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  for (const v of ["timeline", "pace", "rerun"]) {
+    const el = document.getElementById("view-" + v);
+    const on = v === btn.dataset.view;
+    el.hidden = !on;
+    if (on) { el.style.animation = "none"; void el.offsetWidth; el.style.animation = ""; }
+  }
+  hideTip();
+});
+
+/* ---------- starfield ---------- */
+(function stars() {
+  const box = document.getElementById("stars");
+  let h = "";
+  for (let i = 0; i < 110; i++) {
+    const s = Math.random() * 1.6 + 0.6;
+    const tw = Math.random() < 0.28 ? " class=\"tw\"" : "";
+    h += "<i" + tw + ' style="left:' + (Math.random() * 100).toFixed(2) + "%;top:" + (Math.random() * 100).toFixed(2) + "%;width:" + s.toFixed(1) + "px;height:" + s.toFixed(1) + "px;opacity:" + (0.15 + Math.random() * 0.5).toFixed(2) + ";animation-delay:" + (Math.random() * 4).toFixed(1) + 's"></i>';
+  }
+  box.innerHTML = h;
+})();
+
+} catch (err) {
+  const div = document.createElement("div");
+  div.className = "err";
+  div.textContent = "页面脚本出错：\n" + (err && err.stack ? err.stack : err);
+  document.body.appendChild(div);
+  console.error(err);
+}
+})();
+</script>
+</body>
+</html>
