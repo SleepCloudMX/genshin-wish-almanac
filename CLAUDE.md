@@ -15,6 +15,7 @@
   - `validate.py`：校验 UP.json 的结构、顺序、星级一致性、混池规则
   - `analysis/`：分析脚本，输出到 `output/<task>/`
 - `output/`：脚本产物（已 gitignore），勿手改：`UP.md`、`viz/up-visual.html`、分析结果等
+- `temp/`：临时文件（验证截图、探针页、脚本草稿等，已 gitignore）——一律放这里，不要用系统临时目录（如 `C:\...\Local\Temp`）
 - `docs/ai-output/`：AI 产出文档，**独立 git 仓库**，本仓库已 gitignore
 
 ## 常用命令
