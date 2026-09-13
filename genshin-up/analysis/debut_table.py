@@ -29,7 +29,7 @@ def main():
         lines.append(f"| {date} | {version} | {name} | {star}★ |")
     lines += [
         "",
-        "## 无首发 UP（常驻池角色）",
+        "## 无首发 UP（仅混池登场）",
         "",
         "| 角色 | 星级 | 混池次数 |",
         "| --- | --- | --- |",

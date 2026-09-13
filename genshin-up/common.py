@@ -5,6 +5,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "UP.json"
 
+STANDARD_5 = {"迪卢克", "琴", "莫娜", "七七", "刻晴", "提纳里", "迪希雅", "梦见月瑞希"}
+
 
 def load():
     return json.loads(DATA.read_text(encoding="utf-8"))

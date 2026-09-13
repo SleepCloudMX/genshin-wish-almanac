@@ -34,7 +34,7 @@ def main():
         for name, recs in app.items():
             if recs[0]["star"] != star:
                 continue
-            if not any(r["normal"] for r in recs):
+            if name in common.STANDARD_5:
                 continue
             ends = [common.parse_date(r["end"]) for r in recs]
             starts = [common.parse_date(r["date"]) for r in recs]
@@ -75,7 +75,7 @@ def main():
         [
             "# 角色复刻统计",
             "",
-            f"复刻 = 再次 UP（普通池与混池均计入）；常驻角色（无普通 UP）不计入本表。",
+            f"复刻 = 再次 UP（普通池与混池均计入）；常驻五星（琴、莫娜、迪卢克、七七、刻晴、提纳里、迪希雅、梦见月瑞希）不计入本表。",
             f"间隔 = 上个卡池结束日 → 下个卡池开始日之间不含两端的天数；未复刻 = 距上次结束日至 {today.strftime('%Y/%m/%d')} 的天数，UP 中表示当前在池。",
             "标注：日期后缀 (混) = 仅在混池；(UP+混) = 同期普通池与混池都有。",
             "",
