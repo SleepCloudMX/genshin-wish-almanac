@@ -127,8 +127,10 @@ def fig_distribution(app, out_dir):
         Line2D([], [], color=VIOLET, lw=1.2, ls=(0, (4, 3)), label="均值"),
         Line2D([], [], color=GOLD, lw=6, alpha=0.9, label="五星"),
         Line2D([], [], color=SILVER, lw=6, alpha=0.9, label="四星"),
+        Line2D([], [], color=MUTED, marker="|", ls="None", markersize=9,
+               markeredgewidth=1.2, label="底部每条竖线 = 一个样本（横向位置即天数）"),
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False,
+    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False,
                labelcolor=MUTED, fontsize=10, bbox_to_anchor=(0.5, 0.012))
     fig.suptitle("复刻间隔分布", color=TEXT, fontsize=16, y=0.975)
     fig.text(0.5, 0.925, "间隔 = 上个卡池结束 → 下个卡池开始（含混池；常驻五星不计）",
