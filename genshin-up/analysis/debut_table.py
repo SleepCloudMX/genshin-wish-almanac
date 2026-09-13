@@ -9,8 +9,8 @@ def main():
     app = common.appearances(common.load())
     debuted, resident = [], []
     for name, recs in app.items():
-        normal = [r for r in recs if not r["mixed"]]
-        mixed_count = len(recs) - len(normal)
+        normal = [r for r in recs if r["normal"]]
+        mixed_count = sum(1 for r in recs if r["mixed"])
         if normal:
             first = normal[0]
             debuted.append((first["date"], first["version"], name, first["star"]))

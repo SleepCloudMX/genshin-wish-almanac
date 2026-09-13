@@ -1,41 +1,82 @@
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import common
 
 
+def cell(rec):
+    tag = ""
+    if rec["mixed"] and rec["normal"]:
+        tag = "(UP+混)"
+    elif rec["mixed"]:
+        tag = "(混)"
+    return rec["date"] + tag
+
+
+def fmt(value):
+    if value is None:
+        return "—"
+    if isinstance(value, float):
+        return f"{value:.1f}"
+    return str(value)
+
+
 def main():
-    app = common.appearances(common.load())
+    data = common.load()
+    today = date.today()
+    last = data[-1]
+    app = common.appearances(data)
     sections = []
     for star, title in (("5", "五星"), ("4", "四星")):
         rows = []
         for name, recs in app.items():
             if recs[0]["star"] != star:
                 continue
-            ups = [r for r in recs if not r["mixed"]]
-            if not ups:
-                continue
-            dates = [common.parse_date(r["date"]) for r in ups]
+            dates = [common.parse_date(r["date"]) for r in recs]
             gaps = [(b - a).days for a, b in zip(dates, dates[1:])]
-            rows.append((name, ups, len(recs) - len(ups), gaps))
-        rows.sort(key=lambda r: (-len(r[3]), r[1][0]["date"], r[0]))
+            ongoing = (
+                recs[-1]["version"] == last["version"]
+                and recs[-1]["phase"] == last["phase"]
+                and common.parse_date(last["end"]) >= today
+            )
+            rows.append({
+                "name": name,
+                "first": recs[0]["date"],
+                "ups": len(recs),
+                "reruns": len(recs) - 1,
+                "cells": [cell(r) for r in recs],
+                "gaps": gaps,
+                "min": min(gaps) if gaps else None,
+                "avg": (sum(gaps) / len(gaps)) if gaps else None,
+                "max": max(gaps) if gaps else None,
+                "waiting": "UP 中" if ongoing else str((today - dates[-1]).days),
+                "mixed": sum(1 for r in recs if r["mixed"]),
+            })
+        rows.sort(key=lambda r: (-r["reruns"], r["first"], r["name"]))
         lines = [
             f"## {title}（{len(rows)} 名，按复刻次数降序）",
             "",
-            "| 角色 | 首次UP | UP次数 | 复刻次数 | 各次UP日期 | 每次间隔(天) | 平均间隔(天) | 混池次数 |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- |",
+            "| 角色 | 首次UP | UP次数 | 复刻次数 | 各次UP日期 | 每次间隔(天) | 最短 | 平均 | 最长 | 未复刻(天) | 混池 |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
-        for name, ups, mixed_count, gaps in rows:
-            avg = f"{sum(gaps) / len(gaps):.1f}" if gaps else "—"
+        for r in rows:
             lines.append(
-                f"| {name} | {ups[0]['date']} | {len(ups)} | {len(ups) - 1} | "
-                f"{'、'.join(r['date'] for r in ups)} | "
-                f"{'、'.join(str(g) for g in gaps) or '—'} | {avg} | {mixed_count} |"
+                f"| {r['name']} | {r['first']} | {r['ups']} | {r['reruns']} | "
+                f"{'、'.join(r['cells'])} | {'、'.join(str(g) for g in r['gaps']) or '—'} | "
+                f"{fmt(r['min'])} | {fmt(r['avg'])} | {fmt(r['max'])} | {r['waiting']} | {r['mixed']} |"
             )
         sections.append("\n".join(lines))
     text = "\n\n".join(
-        ["# 角色复刻统计", "", "复刻 = 再次进入普通角色活动祈愿；混池单列，不计入复刻。", ""] + sections
+        [
+            "# 角色复刻统计",
+            "",
+            f"复刻 = 再次 UP（普通池与混池均计入）；未复刻 = 距上次 UP 至 {today.strftime('%Y/%m/%d')} 的天数，UP 中表示当前在池。",
+            "标注：日期后缀 (混) = 仅在混池；(UP+混) = 同期普通池与混池都有。",
+            "",
+        ]
+        + sections
     )
     common.write_output("rerun-stats", "rerun-stats.md", text + "\n")
 

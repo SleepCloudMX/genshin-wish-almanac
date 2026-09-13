@@ -299,10 +299,12 @@ footer code{font-family:var(--font-mono);color:var(--gold);font-size:11px}
       <div class="panel">
         <div class="panel-head">
           <h2>复刻间隔</h2>
-          <div class="legend"><span>两次 UP 之间的天数（不含混池）</span></div>
+          <div class="legend"><span>两次 UP 之间的天数（含混池）；未复刻 = 距上次 UP 的天数</span></div>
           <div class="rr-toggle" id="rrToggle">
             <button data-metric="avg" class="on">平均</button>
+            <button data-metric="min">最短</button>
             <button data-metric="max">最长</button>
+            <button data-metric="wait">未复刻</button>
           </div>
           <span class="count" id="rrCount"></span>
         </div>
@@ -341,36 +343,45 @@ try {
 
 /* ---------- model ---------- */
 const chars = new Map();
-function ev(name, star, o) {
-  if (!chars.has(name)) chars.set(name, { name: name, star: star, events: [] });
-  chars.get(name).events.push(o);
+const evIndex = new Map();
+function addEvent(name, star, o) {
+  const key = name + "|" + o.version + "|" + o.phase;
+  let rec = evIndex.get(key);
+  if (!rec) {
+    rec = { date: o.date, t: o.t, version: o.version, phase: o.phase, star: star, normal: false, mixed: false };
+    evIndex.set(key, rec);
+    if (!chars.has(name)) chars.set(name, { name: name, star: star, events: [] });
+    chars.get(name).events.push(rec);
+  }
+  if (o.mixed) { rec.mixed = true; rec.mixName = o.mixName; rec.region = o.region; }
+  else { rec.normal = true; rec.banner = o.banner; rec.four = o.four; }
 }
 for (const e of DATA) {
   const bannerLabel = e.banners.map(function (b) { return b.name; }).join(" / ");
   for (const b of e.banners) {
-    ev(b.five_star, "5", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: b.name, four: e.four_star, mixed: false });
+    addEvent(b.five_star, "5", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: b.name, four: e.four_star });
   }
   for (const n of e.four_star) {
-    ev(n, "4", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: bannerLabel, four: e.four_star, mixed: false });
+    addEvent(n, "4", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: bannerLabel, four: e.four_star });
   }
   const m = e.mixed_banner;
   if (m) {
     for (const n of m.five_star) {
-      ev(n, "5", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: m.name, four: m.four_star, mixed: true, region: m.region });
+      addEvent(n, "5", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, mixed: true, mixName: m.name, region: m.region, four: m.four_star });
     }
     for (const n of m.four_star) {
-      ev(n, "4", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, banner: m.name, four: m.four_star, mixed: true, region: m.region });
+      addEvent(n, "4", { date: e.start, t: d(e.start), version: e.version, phase: e.phase, mixed: true, mixName: m.name, region: m.region, four: m.four_star });
     }
   }
 }
 const list = Array.from(chars.values());
 for (const c of list) {
   c.events.sort(function (a, b) { return a.t - b.t; });
-  c.normal = c.events.filter(function (x) { return !x.mixed; });
+  c.normal = c.events.filter(function (x) { return x.normal; });
   c.mixed = c.events.filter(function (x) { return x.mixed; });
   let firstNormal = null;
   for (const x of c.events) {
-    if (!x.mixed) { x.isNew = firstNormal === null; firstNormal = x; }
+    if (x.normal) { x.isNew = firstNormal === null; firstNormal = x; }
   }
   c.hasNormal = c.normal.length > 0;
   c.first = c.hasNormal ? c.normal[0] : c.mixed[0];
@@ -419,10 +430,11 @@ function eventTip(c, x) {
   const st = c.star === "5" ? "五星" : "四星";
   let h = '<div class="t-name">' + esc(c.name) + '<span class="t-star">' + st + "</span></div>";
   h += '<div class="t-meta">' + x.date + " · " + x.version + " " + x.phase + "</div>";
-  if (x.mixed) {
-    h += '<div class="t-banner t-mix">「' + esc(x.banner) + "」混池" + (x.region ? "（" + esc(x.region) + "）" : "（跨地区）") + "</div>";
-  } else {
+  if (x.normal) {
     h += '<div class="t-banner">「' + esc(x.banner) + "」" + (x.isNew ? " <em>首发</em>" : "") + "</div>";
+  }
+  if (x.mixed) {
+    h += '<div class="t-banner t-mix">混池「' + esc(x.mixName) + "」" + (x.region ? "（" + esc(x.region) + "）" : "（跨地区）") + "</div>";
   }
   if (c.star === "5" && x.four && x.four.length) {
     h += '<div class="t-four">四星：' + esc(joinNames(x.four)) + "</div>";
@@ -489,7 +501,7 @@ list.forEach(function (c, i) {
   }
   for (const x of c.events) {
     const dot = document.createElement("i");
-    dot.className = "tl-dot " + (x.mixed ? "mix " + (c.star === "5" ? "mx5" : "mx4") : (c.star === "5" ? "f5" : "f4"));
+    dot.className = "tl-dot " + (x.mixed && !x.normal ? "mix " + (c.star === "5" ? "mx5" : "mx4") : (c.star === "5" ? "f5" : "f4"));
     dot.style.left = xOf(x.t) + "px";
     dot.addEventListener("mouseenter", function (e) { showTip(eventTip(c, x), e); });
     dot.addEventListener("mouseleave", hideTip);
@@ -515,7 +527,7 @@ const pace = new Map();
 for (const v of versions) pace.set(v, { new5: [], new4: [], rerun5: [], rerun4: [], mixed: null });
 for (const c of list) {
   for (const x of c.events) {
-    if (x.mixed) continue;
+    if (!x.normal) continue;
     const s = pace.get(x.version);
     if (!s) continue;
     const bucket = (x.isNew ? "new" : "rerun") + c.star;
@@ -565,39 +577,60 @@ const PX_H = 250 / paceMax;
 
 /* ---------- rerun ---------- */
 const rrScroll = document.getElementById("rrScroll");
+const LAST = DATA[DATA.length - 1];
 let rrMetric = "avg";
+let rrCurrent = [];
 const rrData = [];
 for (const c of list) {
-  if (c.normal.length < 2) continue;
+  const evs = c.events;
   const gaps = [];
-  for (let i = 1; i < c.normal.length; i++) {
-    gaps.push(Math.round((c.normal[i].t - c.normal[i - 1].t) / DAY));
+  for (let i = 1; i < evs.length; i++) {
+    gaps.push(Math.round((evs[i].t - evs[i - 1].t) / DAY));
   }
-  const avg = gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length;
-  rrData.push({ c: c, gaps: gaps, avg: avg, max: Math.max.apply(null, gaps) });
+  const lastEv = evs[evs.length - 1];
+  const ongoing = lastEv.version === LAST.version && lastEv.phase === LAST.phase && d(LAST.end) >= Date.now();
+  rrData.push({
+    c: c, gaps: gaps,
+    avg: gaps.length ? gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length : null,
+    min: gaps.length ? Math.min.apply(null, gaps) : null,
+    max: gaps.length ? Math.max.apply(null, gaps) : null,
+    wait: ongoing ? 0 : Math.round((Date.now() - lastEv.t) / DAY),
+    ongoing: ongoing,
+  });
 }
-let rrMax = 1;
-for (const r of rrData) rrMax = Math.max(rrMax, r.avg, r.max);
+
+function rrValue(r) {
+  return rrMetric === "wait" ? r.wait : r[rrMetric];
+}
 
 function rrTip(r) {
   let h = '<div class="t-name">' + esc(r.c.name) + '<span class="t-star">' + (r.c.star === "5" ? "五星" : "四星") + "</span></div>";
-  h += '<div class="t-meta">共 UP ' + r.c.normal.length + " 次 · 复刻 " + (r.c.normal.length - 1) + " 次</div>";
-  h += '<div class="t-four">各次间隔：' + r.gaps.join(" · ") + " 天</div>";
-  h += '<div class="t-meta">' + r.c.normal.map(function (x) { return x.date; }).join(" → ") + "</div>";
+  h += '<div class="t-meta">共 UP ' + r.c.events.length + " 次 · 复刻 " + (r.c.events.length - 1) + " 次（含混池）</div>";
+  if (r.gaps.length) h += '<div class="t-four">各次间隔：' + r.gaps.join(" · ") + " 天</div>";
+  h += '<div class="t-meta">' + r.c.events.map(function (x) { return x.date + (x.mixed ? "(混)" : ""); }).join(" → ") + "</div>";
+  h += '<div class="t-four">' + (r.ongoing ? "当前在池（UP 中）" : "距上次 UP：" + r.wait + " 天") + "</div>";
   return h;
 }
+
 function buildRerun() {
-  const rows = rrData.slice().sort(function (a, b) {
-    return (b[rrMetric] - a[rrMetric]) || (a.c.key - b.c.key);
+  const rows = rrData.filter(function (r) { return rrMetric === "wait" || r.gaps.length > 0; });
+  let rrMax = 1;
+  for (const r of rows) rrMax = Math.max(rrMax, rrValue(r));
+  rows.sort(function (a, b) {
+    return (rrValue(b) - rrValue(a)) || (a.c.key - b.c.key);
   });
+  rrCurrent = rows;
   let h = "";
   rows.forEach(function (r, i) {
-    const val = rrMetric === "avg" ? r.avg : r.max;
+    const val = rrValue(r);
     const w = Math.max(1.5, val / rrMax * 100);
+    const txt = rrMetric === "wait"
+      ? (r.ongoing ? "UP 中" : "<b>" + val + "</b> 天未复刻")
+      : "<b>" + Math.round(val) + "</b> 天 · 复刻 " + r.gaps.length + " 次";
     h += '<div class="rr-row" data-star="' + r.c.star + '" data-name="' + esc(r.c.name) + '" style="--i:' + Math.min(i, 100) + '">';
     h += '<div class="rr-name"><span class="' + (r.c.star === "5" ? "n5" : "n4") + '">' + esc(r.c.name) + "</span></div>";
     h += '<div class="rr-track"><div class="rr-bar ' + (r.c.star === "5" ? "b5" : "b4") + '" style="width:' + w + '%"></div></div>';
-    h += '<div class="rr-val"><b>' + Math.round(val) + "</b> 天 · 复刻 " + (r.c.normal.length - 1) + " 次</div>";
+    h += '<div class="rr-val">' + txt + "</div>";
     h += "</div>";
   });
   rrScroll.innerHTML = h;
@@ -643,7 +676,7 @@ function applyFilters() {
     row.classList.toggle("hide", !ok);
     if (ok) rrVisible++;
   });
-  document.getElementById("rrCount").textContent = rrVisible + " / " + rrData.length + " 角色（已复刻）";
+  document.getElementById("rrCount").textContent = rrVisible + " / " + rrCurrent.length + " 角色";
   document.getElementById("rrEmpty").style.display = rrVisible ? "none" : "block";
   document.getElementById("rrScroll").style.display = rrVisible ? "" : "none";
 

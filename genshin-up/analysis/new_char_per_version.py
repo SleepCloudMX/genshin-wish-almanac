@@ -10,7 +10,7 @@ def main():
     versions = sorted({e["version"] for e in data}, key=lambda v: [int(p) for p in v.split(".")])
     per = {v: {"5": [], "4": []} for v in versions}
     for name, recs in common.appearances(data).items():
-        normal = [r for r in recs if not r["mixed"]]
+        normal = [r for r in recs if r["normal"]]
         if normal:
             first = normal[0]
             per[first["version"]][first["star"]].append(name)
