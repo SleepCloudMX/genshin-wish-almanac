@@ -596,7 +596,7 @@ for (const c of list) {
     avg: gaps.length ? gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length : null,
     min: gaps.length ? Math.min.apply(null, gaps) : null,
     max: gaps.length ? Math.max.apply(null, gaps) : null,
-    wait: ongoing ? 0 : Math.round((Date.now() - d(lastEv.end)) / DAY),
+    wait: ongoing ? 0 : Math.floor((Date.now() - d(lastEv.end)) / DAY),
     ongoing: ongoing,
   });
 }
