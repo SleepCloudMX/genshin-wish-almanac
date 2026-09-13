@@ -208,6 +208,7 @@ h1{
 .rr-toggle button{border:1px solid var(--hairline-soft);background:transparent;color:var(--muted);font-size:11.5px;padding:3px 12px;border-radius:999px;cursor:pointer;font-family:var(--font-body)}
 .rr-toggle button.on{color:var(--gold-bright);border-color:var(--hairline);background:rgba(211,188,142,.1)}
 .rr-sort{align-items:center}
+.rr-toggle[hidden]{display:none}
 .rr-sep{flex:none;width:1px;height:16px;background:var(--hairline);margin-right:12px}
 
 /* ---------- distribution ---------- */
@@ -369,6 +370,10 @@ footer a svg{vertical-align:-2px;margin-right:4px}
               <span class="rr-sep" aria-hidden="true"></span>
               <button data-sort="days" class="on" title="按时间排序（默认）">按时间</button>
               <button data-sort="alt" title="按复刻次数排序（从多到少）">按次数</button>
+            </div>
+            <div class="rr-toggle rr-sort" id="rrTrio">
+              <span class="rr-sep" aria-hidden="true"></span>
+              <button title="显示御三家（安柏、凯亚、丽莎）">御三家</button>
             </div>
           </div>
           <span class="count" id="rrCount"></span>
@@ -767,6 +772,7 @@ function waitDays(c) {
 }
 let rrMetric = "avg";
 let rrSort = "days";
+let rrShowTrio = false;
 let rrCurrent = [];
 const rrData = [];
 for (const c of list) {
@@ -795,6 +801,7 @@ function rrValue(r) {
 function buildRerun() {
   const rows = rrData.filter(function (r) {
     if (rrMetric === "first") return r.gaps.length > 0 && r.c.hasNormal;
+    if (!rrShowTrio && !r.c.hasNormal) return false;
     return rrMetric === "wait" || r.gaps.length > 0;
   });
   let rrMax = 1;
@@ -853,6 +860,7 @@ document.getElementById("rrToggle").addEventListener("click", function (e) {
   rrMetric = btn.dataset.metric;
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
   updateSortLabel();
+  document.getElementById("rrTrio").hidden = rrMetric === "first";
   buildRerun();
   applyFilters();
 });
@@ -861,6 +869,14 @@ document.getElementById("rrSort").addEventListener("click", function (e) {
   if (!btn) return;
   rrSort = btn.dataset.sort;
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
+  buildRerun();
+  applyFilters();
+});
+document.getElementById("rrTrio").addEventListener("click", function (e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  rrShowTrio = !rrShowTrio;
+  btn.classList.toggle("on", rrShowTrio);
   buildRerun();
   applyFilters();
 });
