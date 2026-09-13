@@ -188,7 +188,7 @@ h1{
 .rr-scroll{overflow:auto;max-height:70vh;padding:10px 24px 18px}
 .rr-scroll::-webkit-scrollbar{height:10px;width:10px}
 .rr-scroll::-webkit-scrollbar-thumb{background:#2a3350;border-radius:6px;border:2px solid var(--panel)}
-.rr-row{display:flex;align-items:center;gap:14px;height:30px;animation:rise .45s ease both;animation-delay:calc(var(--i)*6ms)}
+.rr-row{display:flex;align-items:center;gap:14px;height:30px;animation:rise .45s ease both;animation-delay:calc(var(--i)*6ms);cursor:pointer}
 .rr-name{flex:0 0 96px;text-align:right;font-size:12.5px;white-space:nowrap;overflow:hidden}
 .rr-name .n5{color:var(--gold)}
 .rr-name .n4{color:var(--silver)}
@@ -255,6 +255,10 @@ h1{
 #tip .t-banner{color:var(--text)}
 #tip .t-four{color:var(--muted);font-size:11.5px}
 #tip .t-mix{color:var(--violet)}
+#tip .t-line{font-size:12px;color:var(--text);white-space:nowrap}
+#tip .t-line.t-status{color:var(--violet);margin-top:3px}
+#toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);z-index:120;background:rgba(10,15,27,.95);border:1px solid var(--hairline);color:var(--gold-bright);font-size:12.5px;padding:8px 20px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
 #tip em{font-style:normal;color:var(--gold)}
 footer{
   text-align:center;margin-top:34px;color:var(--muted);font-size:11.5px;letter-spacing:.05em;position:relative;z-index:1;
@@ -379,6 +383,7 @@ footer code{font-family:var(--font-mono);color:var(--gold);font-size:11px}
 </div>
 
 <div id="tip" hidden></div>
+<div id="toast"></div>
 
 <script>
 (function () {
@@ -501,6 +506,71 @@ function eventTip(c, x) {
   return h;
 }
 
+function upTimeline(c) {
+  const evs = c.events;
+  const lines = [];
+  for (let i = 0; i < evs.length; i++) {
+    const x = evs[i];
+    let tag = "首发";
+    if (i > 0) {
+      tag = "间隔 " + Math.max(0, Math.round((x.t - d(evs[i - 1].end)) / DAY) - 1) + " 天";
+    }
+    lines.push("· " + x.date + " " + poolLabel(x) + "（" + tag + "）");
+  }
+  return lines;
+}
+function upStatus(c) {
+  return isOngoing(c) ? "当前在池（UP 中）" : "距上次结束 " + waitDays(c) + " 天";
+}
+function eventsTip(c) {
+  const st = c.star === "5" ? "五星" : "四星";
+  let h = '<div class="t-name">' + esc(c.name) + '<span class="t-star">' + st + "（共 UP " + c.events.length + " 次）</span></div>";
+  for (const ln of upTimeline(c)) h += '<div class="t-line">' + ln + "</div>";
+  h += '<div class="t-line t-status">' + upStatus(c) + "</div>";
+  h += '<div class="t-meta">点击复制</div>';
+  return h;
+}
+function eventsText(c) {
+  const st = c.star === "5" ? "五星" : "四星";
+  const out = [c.name + " · " + st + "（共 UP " + c.events.length + " 次）"];
+  for (const ln of upTimeline(c)) out.push(ln);
+  out.push(upStatus(c));
+  return out.join("\n");
+}
+function legacyCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); } catch (err) {}
+  document.body.removeChild(ta);
+}
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove("on"); }, 1400);
+}
+function copyText(text) {
+  function ok() { showToast("已复制"); }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, function () { legacyCopy(text); ok(); });
+    } else {
+      legacyCopy(text);
+      ok();
+    }
+  } catch (err) {
+    legacyCopy(text);
+    ok();
+  }
+}
+
 /* ---------- timeline ---------- */
 const tlAxis = document.getElementById("tlAxis");
 const tlBody = document.getElementById("tlBody");
@@ -543,6 +613,12 @@ list.forEach(function (c, i) {
   const nameCell = document.createElement("div");
   nameCell.className = "tl-name";
   nameCell.innerHTML = '<i class="pip" style="background:' + (c.star === "5" ? "var(--gold)" : "var(--silver)") + '"></i><span class="nm">' + esc(c.name) + "</span>";
+  nameCell.addEventListener("mouseenter", function (e) { showTip(eventsTip(c), e); });
+  nameCell.addEventListener("mouseleave", hideTip);
+  nameCell.addEventListener("click", function (e) {
+    e.stopPropagation();
+    copyText(eventsText(c));
+  });
   row.appendChild(nameCell);
 
   const plot = document.createElement("div");
@@ -638,6 +714,14 @@ const PX_H = 250 / paceMax;
 const rrScroll = document.getElementById("rrScroll");
 const LAST = DATA[DATA.length - 1];
 const STANDARD_5 = new Set(["迪卢克", "琴", "莫娜", "七七", "刻晴", "提纳里", "迪希雅", "梦见月瑞希"]);
+
+function isOngoing(c) {
+  const last = c.events[c.events.length - 1];
+  return last.version === LAST.version && last.phase === LAST.phase && d(LAST.end) >= Date.now();
+}
+function waitDays(c) {
+  return Math.floor((Date.now() - d(c.events[c.events.length - 1].end)) / DAY);
+}
 let rrMetric = "avg";
 let rrCurrent = [];
 const rrData = [];
@@ -648,29 +732,19 @@ for (const c of list) {
   for (let i = 1; i < evs.length; i++) {
     gaps.push(Math.max(0, Math.round((evs[i].t - d(evs[i - 1].end)) / DAY) - 1));
   }
-  const lastEv = evs[evs.length - 1];
-  const ongoing = lastEv.version === LAST.version && lastEv.phase === LAST.phase && d(LAST.end) >= Date.now();
+  const ongoing = isOngoing(c);
   rrData.push({
     c: c, gaps: gaps,
     avg: gaps.length ? gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length : null,
     min: gaps.length ? Math.min.apply(null, gaps) : null,
     max: gaps.length ? Math.max.apply(null, gaps) : null,
-    wait: ongoing ? 0 : Math.floor((Date.now() - d(lastEv.end)) / DAY),
+    wait: ongoing ? 0 : waitDays(c),
     ongoing: ongoing,
   });
 }
 
 function rrValue(r) {
   return rrMetric === "wait" ? r.wait : r[rrMetric];
-}
-
-function rrTip(r) {
-  let h = '<div class="t-name">' + esc(r.c.name) + '<span class="t-star">' + (r.c.star === "5" ? "五星" : "四星") + "</span></div>";
-  h += '<div class="t-meta">共 UP ' + r.c.events.length + " 次 · 复刻 " + (r.c.events.length - 1) + " 次（含混池）</div>";
-  if (r.gaps.length) h += '<div class="t-four">各次间隔：' + r.gaps.join(" · ") + " 天</div>";
-  h += '<div class="t-meta">' + r.c.events.map(function (x) { return x.date + (x.mixed ? "(混)" : ""); }).join(" → ") + "</div>";
-  h += '<div class="t-four">' + (r.ongoing ? "当前在池（UP 中）" : "距上次结束：" + r.wait + " 天") + "</div>";
-  return h;
 }
 
 function buildRerun() {
@@ -697,8 +771,9 @@ function buildRerun() {
   rrScroll.innerHTML = h;
   rrScroll.querySelectorAll(".rr-row").forEach(function (row) {
     const r = rrData.find(function (x) { return x.c.name === row.dataset.name; });
-    row.addEventListener("mouseenter", function (e) { showTip(rrTip(r), e); });
+    row.addEventListener("mouseenter", function (e) { showTip(eventsTip(r.c), e); });
     row.addEventListener("mouseleave", hideTip);
+    row.addEventListener("click", function () { copyText(eventsText(r.c)); });
   });
 }
 buildRerun();
