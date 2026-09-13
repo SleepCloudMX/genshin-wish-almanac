@@ -402,7 +402,7 @@ footer a svg{vertical-align:-2px;margin-right:4px}
     <section id="view-distribution" class="view" hidden>
       <div class="panel">
         <div class="panel-head">
-          <h2 id="distTitle">复刻间隔分布</h2>
+          <h2>复刻间隔</h2>
           <div class="rr-toggle dist-view" id="distView">
             <button data-dview="hist" class="on">直方图</button>
             <button data-dview="trend">年代趋势</button>
@@ -1232,7 +1232,6 @@ document.getElementById("distView").addEventListener("click", function (e) {
   distView = btn.dataset.dview;
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
   const hist = distView === "hist";
-  document.getElementById("distTitle").textContent = hist ? "复刻间隔分布" : "复刻间隔趋势";
   document.getElementById("distGrid").hidden = !hist;
   document.querySelector(".dist-detail").hidden = !hist;
   document.getElementById("trendArea").hidden = hist;
