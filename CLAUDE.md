@@ -4,6 +4,7 @@
 
 ## 结构约定
 
+- `README.md`：面向访客的项目说明（含在线页面链接），面向公开仓库
 - `data/UP.json`：唯一数据源。每条 = 一个版本阶段（上/中/下）：
   `version`、`phase`、`start`、`end`、`banners[{name, five_star}]`、`four_star[]`、`mixed_banner{name, region, five_star, four_star}|null`
 - `index.html`：祈愿星历页面，由 `visualize.py` 生成（勿手改），随仓库提交，经 GitHub Actions 发布（`.github/workflows/pages.yml`，push 到 main 即自动部署）
