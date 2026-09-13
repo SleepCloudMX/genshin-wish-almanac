@@ -14,7 +14,7 @@ Genshin Impact wish/banner history & analysis. 原神历届卡池（角色活动
 - `data/UP.json` — 唯一数据源：版本、阶段、起止日期、五星、四星、混池（名称/地区/五星/四星）
 - `genshin-up/` — Python 脚本（仅标准库）
   - `visualize.py` 生成页面 · `export_md.py` 导出 Markdown 表 · `update.py` 增量更新数据 · `validate.py` 数据校验
-  - `analysis/` 分析脚本（首发时间表、各版本新角色、复刻统计、间隔分布图）
+  - `analysis/` 分析脚本（首发时间表、各版本新角色、复刻统计、间隔分布/趋势图）
 
 ## 统计口径
 
