@@ -167,9 +167,10 @@ h1{
 .empty-hint{padding:26px 24px;color:var(--muted);font-size:12.5px;display:none}
 
 /* ---------- pace ---------- */
-.pace-scroll{overflow-x:auto;padding:26px 22px 8px}
+.pace-scroll{overflow-x:auto;padding:40px 22px 8px}
 .pace-chart{display:flex;align-items:flex-end;gap:9px;min-width:max-content}
 .pcol{position:relative;display:flex;flex-direction:column;align-items:center;width:26px;padding-bottom:42px}
+.pcol.mixed::before{content:"";position:absolute;top:-38px;left:50%;transform:translateX(-50%);width:38px;height:46px;border-radius:50%;background:radial-gradient(closest-side,rgba(180,140,224,.16),transparent);pointer-events:none}
 .pwrap{height:250px;display:flex;flex-direction:column-reverse;align-items:center;width:100%}
 .pseg{width:19px;opacity:.95;transition:opacity .18s,filter .18s;cursor:default}
 .pseg:first-child{border-radius:0 0 3px 3px}
@@ -181,7 +182,7 @@ h1{
 .pseg.hide{display:none}
 .ptotal{font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:3px}
 .pver{position:absolute;bottom:8px;left:50%;transform:translateX(-50%) rotate(-55deg);font-family:var(--font-mono);font-size:10px;color:var(--muted);white-space:nowrap}
-.pmix{position:absolute;top:-20px;left:50%;transform:translateX(-50%);color:var(--violet);font-size:12px;text-shadow:0 0 8px rgba(180,140,224,.6)}
+.pmix{position:absolute;top:-27px;left:50%;transform:translateX(-50%);color:#c19fe4;font-size:18px;line-height:1;text-shadow:0 0 8px rgba(180,140,224,.6),0 0 16px rgba(180,140,224,.22)}
 .pace-legend{padding:0 24px 18px;display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
 .pace-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
@@ -200,6 +201,7 @@ h1{
 .rr-row:hover .rr-bar{filter:brightness(1.25)}
 .rr-val{flex:0 0 150px;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
 .rr-val b{color:var(--gold);font-weight:600}
+.rr-val .rr-cnt{color:var(--gold);font-weight:600}
 .rr-controls{display:flex;gap:16px;align-items:center;margin-left:auto}
 .rr-toggle{display:flex;gap:4px}
 .rr-toggle button{border:1px solid var(--hairline-soft);background:transparent;color:var(--muted);font-size:11.5px;padding:3px 12px;border-radius:999px;cursor:pointer;font-family:var(--font-body)}
@@ -707,7 +709,7 @@ const PX_H = 250 / paceMax;
   for (const v of versions) {
     const s = pace.get(v);
     const total = s.new5.length + s.new4.length + s.rerun5.length + s.rerun4.length;
-    h += '<div class="pcol" data-version="' + v + '">';
+    h += '<div class="pcol' + (s.mixed ? " mixed" : "") + '" data-version="' + v + '">';
     if (s.mixed) h += '<div class="pmix" data-version="' + v + '">' + MX5 + "</div>";
     h += '<div class="pwrap">';
     h += '<div class="pseg r4" data-k="rerun4" style="height:' + s.rerun4.length * PX_H + 'px"></div>';
@@ -802,9 +804,10 @@ function buildRerun() {
   rows.forEach(function (r, i) {
     const val = rrValue(r);
     const w = Math.max(1.5, val / rrMax * 100);
+    const cnt = '<span class="rr-cnt">' + r.gaps.length + "</span>";
     const txt = (rrMetric === "wait"
       ? (r.ongoing ? "UP 中" : "<b>" + val + "</b> 天未复刻")
-      : "<b>" + Math.round(val) + "</b> 天") + " · 复刻 " + r.gaps.length + " 次";
+      : "<b>" + Math.round(val) + "</b> 天") + " · 复刻 " + cnt + " 次";
     h += '<div class="rr-row" data-star="' + r.c.star + '" data-name="' + esc(r.c.name) + '" style="--i:' + Math.min(i, 100) + '">';
     h += '<div class="rr-name"><span class="' + (r.c.star === "5" ? "n5" : "n4") + '">' + esc(r.c.name) + "</span></div>";
     h += '<div class="rr-track"><div class="rr-bar ' + (r.c.star === "5" ? "b5" : "b4") + '" style="width:' + w + '%"></div></div>';
