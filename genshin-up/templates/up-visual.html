@@ -203,6 +203,37 @@ h1{
 .rr-toggle button{border:1px solid var(--hairline-soft);background:transparent;color:var(--muted);font-size:11.5px;padding:3px 12px;border-radius:999px;cursor:pointer;font-family:var(--font-body)}
 .rr-toggle button.on{color:var(--gold-bright);border-color:var(--hairline);background:rgba(211,188,142,.1)}
 
+/* ---------- distribution ---------- */
+.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px;padding:20px 24px 4px}
+.dist-panel.hide{display:none}
+.dist-title{font-size:13px;color:var(--text);letter-spacing:.5px;margin-bottom:10px}
+.dist-stats{margin-left:12px;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.dist-plot{position:relative;display:flex;align-items:flex-end;gap:1px;height:150px;border-bottom:1px solid var(--hairline-soft)}
+.dist-bin{flex:1;height:100%;display:flex;align-items:flex-end;cursor:pointer}
+.dist-bin.empty{cursor:default}
+.dist-fill{width:100%;border-radius:2px 2px 0 0;transition:filter .15s,box-shadow .15s}
+.dist-fill.gold{background:linear-gradient(180deg,#e8c987,#c9a86a)}
+.dist-fill.silver{background:linear-gradient(180deg,#b9c8dc,#8d9db4)}
+.dist-bin:hover .dist-fill{filter:brightness(1.25)}
+.dist-bin.sel .dist-fill{filter:brightness(1.35);box-shadow:0 0 12px rgba(211,188,142,.75)}
+.dist-guide{position:absolute;top:0;bottom:0;width:1px;background:rgba(211,188,142,.07);pointer-events:none}
+.dist-line{position:absolute;top:0;bottom:0;width:1px;pointer-events:none}
+.dist-line.med{background:var(--gold-bright);opacity:.85}
+.dist-line.avg{background:repeating-linear-gradient(180deg,var(--violet) 0 4px,transparent 4px 7px);opacity:.85}
+.dist-axis{position:relative;height:16px;margin-top:3px}
+.dist-axis span{position:absolute;transform:translateX(-50%);font-family:var(--font-mono);font-size:10px;color:var(--muted)}
+.dist-detail{margin:16px 24px 20px;border:1px solid var(--hairline-soft);border-radius:12px;background:rgba(10,15,27,.55)}
+.dd-head{padding:10px 16px;font-size:12.5px;color:var(--gold);border-bottom:1px solid var(--hairline-soft)}
+.dd-sub{color:var(--muted);margin-left:10px;font-family:var(--font-mono);font-size:11px}
+.dd-body{max-height:250px;overflow:auto;padding:4px 16px 12px}
+.dd-body::-webkit-scrollbar{width:9px}
+.dd-body::-webkit-scrollbar-thumb{background:#2a3350;border-radius:6px;border:2px solid var(--panel)}
+.dd-group{margin:10px 0 2px;font-family:var(--font-mono);font-size:11.5px;color:var(--violet)}
+.dd-row{padding:2px 0 2px 14px;font-size:12.5px;color:var(--text)}
+.dd-row b{color:var(--gold)}
+.lg-med{display:inline-block;width:16px;height:2px;background:var(--gold-bright);vertical-align:2px}
+.lg-avg{display:inline-block;width:16px;height:2px;background:repeating-linear-gradient(90deg,var(--violet) 0 4px,transparent 4px 7px);vertical-align:2px}
+
 /* ---------- tooltip / footer ---------- */
 #tip{
   position:fixed;z-index:99;pointer-events:none;max-width:340px;
@@ -247,6 +278,7 @@ footer code{font-family:var(--font-mono);color:var(--gold);font-size:11px}
       <button data-view="timeline" class="on">时间线</button>
       <button data-view="pace">版本节奏</button>
       <button data-view="rerun">复刻间隔</button>
+      <button data-view="distribution">分布</button>
     </div>
     <input id="q" type="search" placeholder="搜索角色…" autocomplete="off">
   </nav>
@@ -310,6 +342,24 @@ footer code{font-family:var(--font-mono);color:var(--gold);font-size:11px}
         </div>
         <div class="rr-scroll" id="rrScroll"></div>
         <div class="empty-hint" id="rrEmpty">没有匹配的角色</div>
+      </div>
+    </section>
+
+    <section id="view-distribution" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>复刻间隔分布</h2>
+          <div class="legend">
+            <span><i class="lg-med"></i>中位</span>
+            <span><i class="lg-avg"></i>均值</span>
+            <span>每箱 21 天 · 点击柱形在下方查看明细（再点一次取消）</span>
+          </div>
+        </div>
+        <div class="dist-grid" id="distGrid"></div>
+        <div class="dist-detail">
+          <div class="dd-head" id="ddHead">点击柱形查看明细</div>
+          <div class="dd-body" id="ddBody"></div>
+        </div>
       </div>
     </section>
   </main>
@@ -652,6 +702,191 @@ document.getElementById("rrToggle").addEventListener("click", function (e) {
   applyFilters();
 });
 
+/* ---------- distribution ---------- */
+const BIN = 21;
+const NBINS = 34;
+const distGap = { "5": [], "4": [] };
+const distAvg = { "5": [], "4": [] };
+for (const c of list) {
+  if (STANDARD_5.has(c.name)) continue;
+  const evs = c.events;
+  const gaps = [];
+  for (let i = 1; i < evs.length; i++) {
+    const g = Math.max(0, Math.round((evs[i].t - d(evs[i - 1].end)) / DAY) - 1);
+    gaps.push(g);
+    distGap[c.star].push({ name: c.name, gap: g, next: evs[i] });
+  }
+  if (gaps.length) {
+    distAvg[c.star].push({
+      name: c.name,
+      avg: gaps.reduce(function (a, b) { return a + b; }, 0) / gaps.length,
+      count: evs.length,
+      first: evs[0].date,
+      last: evs[evs.length - 1].date,
+    });
+  }
+}
+
+const distPanels = [
+  { id: "g5", star: "5", mode: "gap", title: "五星 · 逐次复刻间隔", cls: "gold" },
+  { id: "g4", star: "4", mode: "gap", title: "四星 · 逐次复刻间隔", cls: "silver" },
+  { id: "a5", star: "5", mode: "avg", title: "五星 · 角色平均间隔", cls: "gold" },
+  { id: "a4", star: "4", mode: "avg", title: "四星 · 角色平均间隔", cls: "silver" },
+];
+
+function medOf(a) {
+  const s = a.slice().sort(function (x, y) { return x - y; });
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function fmtNum(v) {
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+function binIndex(v) {
+  return Math.min(NBINS - 1, Math.floor(v / BIN));
+}
+function binLabel(b) {
+  return b * BIN + "–" + ((b + 1) * BIN - 1);
+}
+function poolLabel(ev) {
+  return ev.version + ev.phase + (ev.mixed ? "混" : "");
+}
+function distPanelById(id) {
+  return distPanels.filter(function (p) { return p.id === id; })[0];
+}
+function distPoints(p) {
+  return p.mode === "gap" ? distGap[p.star] : distAvg[p.star];
+}
+function distValue(p, pt) {
+  return p.mode === "gap" ? pt.gap : pt.avg;
+}
+function distRows(id, b) {
+  const p = distPanelById(id);
+  return distPoints(p).filter(function (pt) { return binIndex(distValue(p, pt)) === b; });
+}
+function distRowHtml(p, pt) {
+  if (p.mode === "gap") {
+    const ev = pt.next;
+    return '<div class="dd-row">' + esc(pt.name) + " · " + poolLabel(ev) + "（" + ev.date + " ~ " + ev.end + "）</div>";
+  }
+  return '<div class="dd-row">' + esc(pt.name) + " · <b>" + fmtNum(pt.avg) + "</b> 天 · " + pt.count + " 次 UP · " + pt.first + " → " + pt.last + "</div>";
+}
+
+(function buildDistribution() {
+  const grid = document.getElementById("distGrid");
+  let h = "";
+  for (const p of distPanels) {
+    const pts = distPoints(p);
+    const vals = pts.map(function (x) { return distValue(p, x); });
+    const counts = new Array(NBINS).fill(0);
+    for (const v of vals) counts[binIndex(v)]++;
+    const maxC = Math.max.apply(null, counts) || 1;
+    const med = medOf(vals);
+    const mean = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+    h += '<div class="dist-panel" id="dp-' + p.id + '" data-star="' + p.star + '">';
+    h += '<div class="dist-title">' + p.title +
+         '<span class="dist-stats">N=' + vals.length + " ｜ 中位 " + fmtNum(med) + " · 均值 " + fmtNum(mean) + " 天</span></div>";
+    h += '<div class="dist-plot">';
+    for (let t = 84; t < NBINS * BIN; t += 84) {
+      h += '<i class="dist-guide" style="left:' + (t * 100 / (NBINS * BIN)).toFixed(3) + '%"></i>';
+    }
+    for (let b = 0; b < NBINS; b++) {
+      if (!counts[b]) {
+        h += '<div class="dist-bin empty"></div>';
+      } else {
+        h += '<div class="dist-bin" data-panel="' + p.id + '" data-bin="' + b + '">' +
+             '<div class="dist-fill ' + p.cls + '" style="height:' + (counts[b] * 100 / maxC).toFixed(2) + '%"></div></div>';
+      }
+    }
+    h += '<i class="dist-line med" style="left:' + (med * 100 / (NBINS * BIN)).toFixed(3) + '%"></i>';
+    h += '<i class="dist-line avg" style="left:' + (mean * 100 / (NBINS * BIN)).toFixed(3) + '%"></i>';
+    h += "</div>";
+    h += '<div class="dist-axis">';
+    for (let t = 0; t <= (NBINS - 1) * BIN; t += 84) {
+      h += '<span style="left:' + (t * 100 / (NBINS * BIN)).toFixed(3) + '%">' + t + "</span>";
+    }
+    h += "</div>";
+    h += "</div>";
+  }
+  grid.innerHTML = h;
+})();
+
+const distState = { sel: null };
+const distGrid = document.getElementById("distGrid");
+let distLastBin = null;
+distGrid.addEventListener("mouseover", function (e) {
+  const bin = e.target.closest(".dist-bin");
+  if (!bin || bin.classList.contains("empty")) {
+    if (distLastBin) { distLastBin = null; hideTip(); }
+    return;
+  }
+  if (bin === distLastBin) return;
+  distLastBin = bin;
+  const p = distPanelById(bin.dataset.panel);
+  const b = Number(bin.dataset.bin);
+  const pts = distRows(p.id, b);
+  let h = '<div class="t-name">' + p.title.split(" · ")[0] + " · " + (p.mode === "gap" ? "逐次间隔" : "平均间隔") + "</div>";
+  h += '<div class="t-meta">' + binLabel(b) + " 天 · 共 " + pts.length + " 条</div>";
+  h += '<div class="t-four">';
+  const show = pts.slice(0, 5);
+  for (const pt of show) {
+    if (p.mode === "gap") {
+      h += esc(pt.name) + " · " + poolLabel(pt.next) + "（" + pt.next.date + "）<br>";
+    } else {
+      h += esc(pt.name) + " · " + fmtNum(pt.avg) + " 天<br>";
+    }
+  }
+  h += "</div>";
+  if (pts.length > show.length) h += '<div class="t-meta">…点击查看全部</div>';
+  showTip(h, e);
+});
+distGrid.addEventListener("mouseout", function (e) {
+  if (e.target.closest(".dist-bin")) { distLastBin = null; hideTip(); }
+});
+distGrid.addEventListener("click", function (e) {
+  const bin = e.target.closest(".dist-bin");
+  if (!bin || bin.classList.contains("empty")) return;
+  const id = bin.dataset.panel;
+  const b = Number(bin.dataset.bin);
+  if (distState.sel && distState.sel.id === id && distState.sel.bin === b) {
+    distState.sel = null;
+  } else {
+    distState.sel = { id: id, bin: b };
+  }
+  distGrid.querySelectorAll(".dist-bin.sel").forEach(function (x) { x.classList.remove("sel"); });
+  if (distState.sel) bin.classList.add("sel");
+  renderDistDetail();
+  hideTip();
+});
+function renderDistDetail() {
+  const head = document.getElementById("ddHead");
+  const body = document.getElementById("ddBody");
+  if (!distState.sel) {
+    head.textContent = "点击柱形查看明细";
+    body.innerHTML = "";
+    return;
+  }
+  const p = distPanelById(distState.sel.id);
+  const b = distState.sel.bin;
+  const pts = distRows(p.id, b);
+  head.innerHTML = p.title + '<span class="dd-sub">' + binLabel(b) + " 天 ｜ 共 " + pts.length + " 条 ｜ 再点柱形取消</span>";
+  let h = "";
+  if (p.mode === "gap") {
+    const groups = {};
+    for (const pt of pts) (groups[pt.gap] = groups[pt.gap] || []).push(pt);
+    const keys = Object.keys(groups).map(Number).sort(function (x, y) { return y - x; });
+    for (const g of keys) {
+      h += '<div class="dd-group">' + g + " 天 · " + groups[g].length + " 条</div>";
+      groups[g].sort(function (x, y) { return x.name.localeCompare(y.name, "zh"); });
+      for (const pt of groups[g]) h += distRowHtml(p, pt);
+    }
+  } else {
+    pts.sort(function (x, y) { return y.avg - x.avg; });
+    for (const pt of pts) h += distRowHtml(p, pt);
+  }
+  body.innerHTML = h;
+}
+
 /* ---------- filters / search / tabs ---------- */
 let starFilter = "all";
 const qInput = document.getElementById("q");
@@ -686,6 +921,9 @@ function applyFilters() {
     const star = seg.dataset.k.slice(-1);
     seg.classList.toggle("hide", starFilter !== "all" && star !== starFilter);
   });
+  document.querySelectorAll(".dist-panel").forEach(function (el) {
+    el.classList.toggle("hide", starFilter !== "all" && el.dataset.star !== starFilter);
+  });
 }
 applyFilters();
 
@@ -702,7 +940,7 @@ document.getElementById("tabBar").addEventListener("click", function (e) {
   const btn = e.target.closest("button");
   if (!btn) return;
   this.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b === btn); });
-  for (const v of ["timeline", "pace", "rerun"]) {
+  for (const v of ["timeline", "pace", "rerun", "distribution"]) {
     const el = document.getElementById("view-" + v);
     const on = v === btn.dataset.view;
     el.hidden = !on;
