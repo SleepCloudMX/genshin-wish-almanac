@@ -206,6 +206,7 @@ h1{
 .rr-controls{display:flex;gap:16px;align-items:center;margin-left:auto}
 .rr-toggle{display:flex;gap:4px}
 .rr-toggle button{border:1px solid var(--hairline-soft);background:transparent;color:var(--muted);font-size:11.5px;padding:3px 12px;border-radius:999px;cursor:pointer;font-family:var(--font-body)}
+.rr-toggle button:not(.on):hover{border-color:var(--hairline);color:var(--text)}
 .rr-toggle button.on{color:var(--gold-bright);border-color:var(--hairline);background:rgba(211,188,142,.1)}
 .rr-sort{align-items:center}
 .rr-sep{flex:none;width:1px;height:16px;background:var(--hairline);margin-right:12px}
@@ -248,7 +249,9 @@ h1{
 .dd-stats{color:var(--muted);white-space:nowrap}
 .dd-stats b{color:var(--gold)}
 .legend[hidden],.dist-grid[hidden],.dist-detail[hidden],.trend-area[hidden]{display:none}
-.dist-view{margin-left:auto;align-items:center}
+.dist-view{align-items:center}
+.dist-view button{font-size:12px;padding:4px 14px}
+#distLegendHist,#distLegendTrend{margin-left:auto}
 .trend-area{padding:16px 24px 2px}
 .trend-bar{display:flex;margin-bottom:12px}
 .trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px}
@@ -400,6 +403,10 @@ footer a svg{vertical-align:-2px;margin-right:4px}
       <div class="panel">
         <div class="panel-head">
           <h2 id="distTitle">复刻间隔分布</h2>
+          <div class="rr-toggle dist-view" id="distView">
+            <button data-dview="hist" class="on">直方图</button>
+            <button data-dview="trend">年代趋势</button>
+          </div>
           <div class="legend" id="distLegendHist">
             <span><i class="lg-med"></i>中位</span>
             <span><i class="lg-avg"></i>均值</span>
@@ -408,10 +415,6 @@ footer a svg{vertical-align:-2px;margin-right:4px}
           <div class="legend" id="distLegendTrend" hidden>
             <span>箱 = 四分位 · 须 = 1.5×IQR · 点为个体样本</span>
             <span>悬浮看明细 · 点击复制</span>
-          </div>
-          <div class="rr-toggle dist-view" id="distView">
-            <button data-dview="hist" class="on">直方图</button>
-            <button data-dview="trend">年代趋势</button>
           </div>
         </div>
         <div class="dist-grid" id="distGrid"></div>
