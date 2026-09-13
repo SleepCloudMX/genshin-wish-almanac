@@ -6,9 +6,10 @@
 
 - `data/UP.json`：唯一数据源。每条 = 一个版本阶段（上/中/下）：
   `version`、`phase`、`start`、`end`、`banners[{name, five_star}]`、`four_star[]`、`mixed_banner{name, region, five_star, four_star}|null`
+- `index.html`：祈愿星历页面，由 `visualize.py` 生成（勿手改），随仓库提交、经 GitHub Pages 发布（仓库 Settings → Pages → main 根目录）
 - `genshin-up/`：Python 脚本（仅标准库），用 conda **ai 环境**运行（`D:\Software\miniconda3\envs\ai\python.exe`，常见库齐全）
   - `export_md.py`：data/UP.json → `output/UP.md`
-  - `visualize.py`：data/UP.json → `output/viz/up-visual.html`（单文件交互可视化页，页面模板在 `templates/`）
+  - `visualize.py`：data/UP.json → `index.html`（单文件交互可视化页「祈愿星历」，页面模板在 `templates/`）
   - `update.py`：拉取 TeyvatGuide 最新 gacha.json，追加新期次（新混池地区需人工确认；角色名缓存于 `.cache/`）
   - `validate.py`：校验 UP.json 的结构、顺序、星级一致性、混池规则
   - `analysis/`：分析脚本，输出到 `output/<task>/`
@@ -18,7 +19,7 @@
 ## 常用命令
 
 - 重新生成 UP.md：`python genshin-up/export_md.py` → `output/UP.md`
-- 生成可视化页：`python genshin-up/visualize.py` → 浏览器打开 `output/viz/up-visual.html`
+- 生成可视化页：`python genshin-up/visualize.py` → 根目录 `index.html`（push 后 GitHub Pages 自动更新）
 - 更新数据：`python genshin-up/update.py`（复核 git diff 后提交）
 - 校验数据：`python genshin-up/validate.py`
 - 跑分析：`python genshin-up/analysis/<script>.py`
