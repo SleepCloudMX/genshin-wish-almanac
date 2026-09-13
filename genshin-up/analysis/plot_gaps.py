@@ -24,8 +24,8 @@ GOLD = "#d3bc8e"
 GOLD_B = "#f2ddab"
 SILVER = "#9fb2c8"
 VIOLET = "#b48ce0"
-BIN = 42
-EDGES = np.arange(0, BIN * 18 + 1, BIN)
+BIN = 21
+EDGES = np.arange(0, BIN * 34 + 1, BIN)
 
 RNG = np.random.default_rng(20260913)
 
@@ -75,9 +75,7 @@ def draw_hist(ax, pts, color, title):
     vals = [p["gap"] for p in pts]
     ax.hist(vals, bins=EDGES, color=color, edgecolor=BG, linewidth=1.1, alpha=0.95)
     ymax = ax.get_ylim()[1]
-    ax.set_ylim(-ymax * 0.11, ymax * 1.42)
-    rug_y = -ymax * 0.075 + RNG.uniform(-ymax * 0.022, ymax * 0.022, len(vals))
-    ax.scatter(vals, rug_y, marker="|", s=26, color=color, alpha=0.75, linewidths=0.9)
+    ax.set_ylim(0, ymax * 1.42)
 
     med = float(np.median(vals))
     mean = float(np.mean(vals))
@@ -97,7 +95,7 @@ def draw_hist(ax, pts, color, title):
         bbox=dict(facecolor=BG, edgecolor=PANEL_EDGE, boxstyle="round,pad=0.5", alpha=0.92),
     )
     ax.set_title(title, color=TEXT, fontsize=12, pad=10)
-    ax.set_xlabel("天（每箱 = 42 天 ≈ 一个版本周期）", color=MUTED, fontsize=9)
+    ax.set_xlabel("天（每箱 = 21 天 = 半个版本周期）", color=MUTED, fontsize=9)
 
 
 def fig_distribution(app, out_dir):
@@ -127,10 +125,8 @@ def fig_distribution(app, out_dir):
         Line2D([], [], color=VIOLET, lw=1.2, ls=(0, (4, 3)), label="均值"),
         Line2D([], [], color=GOLD, lw=6, alpha=0.9, label="五星"),
         Line2D([], [], color=SILVER, lw=6, alpha=0.9, label="四星"),
-        Line2D([], [], color=MUTED, marker="|", ls="None", markersize=9,
-               markeredgewidth=1.2, label="底部每条竖线 = 一个样本（横向位置即天数）"),
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=5, frameon=False,
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False,
                labelcolor=MUTED, fontsize=10, bbox_to_anchor=(0.5, 0.012))
     fig.suptitle("复刻间隔分布", color=TEXT, fontsize=16, y=0.975)
     fig.text(0.5, 0.925, "间隔 = 上个卡池结束 → 下个卡池开始（含混池；常驻五星不计）",
