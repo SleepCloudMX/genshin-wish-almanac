@@ -45,12 +45,17 @@ def gap_records(app, star):
         if recs[0]["star"] != star or name in common.STANDARD_5:
             continue
         normal = [r for r in recs if r["normal"]]
-        debut_year = common.parse_date((normal[0] if normal else recs[0])["date"]).year
+        debut = normal[0] if normal else recs[0]
         ends = [common.parse_date(r["end"]) for r in recs]
         starts = [common.parse_date(r["date"]) for r in recs]
         for i in range(1, len(recs)):
             out.append(
-                {"name": name, "gap": max(0, (starts[i] - ends[i - 1]).days - 1), "year": debut_year}
+                {
+                    "name": name,
+                    "gap": max(0, (starts[i] - ends[i - 1]).days - 1),
+                    "debutYear": common.parse_date(debut["date"]).year,
+                    "rerunYear": starts[i].year,
+                }
             )
     return out
 
@@ -138,30 +143,23 @@ def fig_distribution(app, out_dir):
     print(f"written: {path.relative_to(common.ROOT)}")
 
 
-def bucket_of(year):
-    if year <= 2021:
-        return "2020–2021 首发"
-    if year <= 2023:
-        return "2022–2023 首发"
-    return "2024–2026 首发"
-
-
-def fig_trend(app, out_dir):
+def fig_trend(app, out_dir, filename, year_key, suffix, suptitle, subtitle):
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 6.2))
     fig.patch.set_facecolor(BG)
-    order = ["2020–2021 首发", "2022–2023 首发", "2024–2026 首发"]
     for ax, star, color, title in (
         (axes[0], "5", GOLD, "五星"),
         (axes[1], "4", SILVER, "四星"),
     ):
         style_ax(ax)
         recs = gap_records(app, star)
-        groups = {b: [] for b in order}
+        years = sorted({p[year_key] for p in recs})
+        groups = {y: [] for y in years}
         for p in recs:
-            groups[bucket_of(p["year"])].append(p["gap"])
-        data = [groups[b] for b in order]
-        bp = ax.boxplot(
-            data, positions=[1, 2, 3], widths=0.42, patch_artist=True, showfliers=False,
+            groups[p[year_key]].append(p["gap"])
+        data = [groups[y] for y in years]
+        pos = list(range(1, len(years) + 1))
+        ax.boxplot(
+            data, positions=pos, widths=0.45, patch_artist=True, showfliers=False,
             boxprops=dict(facecolor=PANEL, edgecolor=color, linewidth=1.3),
             medianprops=dict(color=GOLD_B, linewidth=1.6),
             whiskerprops=dict(color=MUTED), capprops=dict(color=MUTED),
@@ -169,7 +167,7 @@ def fig_trend(app, out_dir):
         top = max(v for d in data for v in d)
         ax.set_ylim(-top * 0.04, top * 1.26)
         for i, vals in enumerate(data):
-            x = np.full(len(vals), 1 + i) + RNG.uniform(-0.16, 0.16, len(vals))
+            x = np.full(len(vals), 1 + i) + RNG.uniform(-0.17, 0.17, len(vals))
             ax.scatter(x, vals, s=7, color=color, alpha=0.55, zorder=3)
             ax.text(
                 1 + i, ax.get_ylim()[1] * 0.98,
@@ -177,16 +175,14 @@ def fig_trend(app, out_dir):
                 ha="center", va="top", fontsize=8.5, color=TEXT, linespacing=1.4,
                 bbox=dict(facecolor=BG, edgecolor=PANEL_EDGE, boxstyle="round,pad=0.35", alpha=0.9),
             )
-        ax.set_xticks([1, 2, 3])
-        ax.set_xticklabels(order, fontsize=9.5)
-        ax.set_title(f"{title} · 按首发年代", color=TEXT, fontsize=12, pad=10)
+        ax.set_xticks(pos)
+        ax.set_xticklabels([str(y) for y in years], fontsize=9.5)
+        ax.set_title(f"{title} · {suffix}", color=TEXT, fontsize=12, pad=10)
         ax.set_ylabel("复刻间隔（天）", color=MUTED, fontsize=9.5)
-    fig.suptitle("复刻间隔的年代趋势", color=TEXT, fontsize=16, y=0.98)
-    fig.text(0.5, 0.915,
-             "箱线 + 个体散点；新角色观察窗口短，后期样本的间隔天然偏短（截断偏差），看整体走势即可",
-             color=MUTED, fontsize=9.5, ha="center")
+    fig.suptitle(suptitle, color=TEXT, fontsize=16, y=0.98)
+    fig.text(0.5, 0.915, subtitle, color=MUTED, fontsize=9.5, ha="center")
     fig.tight_layout(rect=(0, 0.02, 1, 0.89))
-    path = out_dir / "gap-trend.png"
+    path = out_dir / filename
     fig.savefig(path, dpi=144, facecolor=BG)
     plt.close(fig)
     print(f"written: {path.relative_to(common.ROOT)}")
@@ -197,7 +193,16 @@ def main():
     out_dir = common.ROOT / "output" / "gap-dist"
     out_dir.mkdir(parents=True, exist_ok=True)
     fig_distribution(app, out_dir)
-    fig_trend(app, out_dir)
+    fig_trend(
+        app, out_dir, "gap-trend-yearly.png", "debutYear", "按首发年份",
+        "复刻间隔的年代趋势（按首发年份）",
+        "箱线 + 个体散点；新角色观察窗口短，后期样本的间隔天然偏短（截断偏差），看整体走势即可",
+    )
+    fig_trend(
+        app, out_dir, "gap-trend-yearly-rerun.png", "rerunYear", "按复刻年份",
+        "复刻间隔的年代趋势（按复刻年份）",
+        "箱线 + 个体散点；按每次复刻发生的年份归组（间隔未完成、不再复刻的不在样本内；2026 截至 9 月）",
+    )
 
 
 if __name__ == "__main__":
