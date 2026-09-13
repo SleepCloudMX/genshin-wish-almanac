@@ -228,10 +228,11 @@ h1{
 .dd-body{max-height:250px;overflow:auto;padding:4px 16px 12px}
 .dd-body::-webkit-scrollbar{width:9px}
 .dd-body::-webkit-scrollbar-thumb{background:#2a3350;border-radius:6px;border:2px solid var(--panel)}
-.dd-group{margin:10px 0 2px;font-family:var(--font-mono);font-size:11.5px;color:var(--violet)}
 .dd-row{display:grid;align-items:baseline;column-gap:14px;padding:3px 0;font-size:12.5px;color:var(--text)}
-.dd-row.gap{grid-template-columns:200px 10em 1fr}
-.dd-row.avg{grid-template-columns:200px 10em 200px 1fr}
+.dd-row.gap{grid-template-columns:6.5em 4.5em 10em 200px}
+.dd-row.avg{grid-template-columns:6.5em 13em 10em 200px}
+.dd-name{white-space:nowrap}
+.dd-gap{text-align:right;color:var(--gold);white-space:nowrap}
 .dd-dates{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
 .dd-vers{white-space:nowrap}
 .v-prev{display:inline-block;width:4em;text-align:right}
@@ -783,15 +784,16 @@ function distRows(id, b) {
 function distRowHtml(p, pt) {
   if (p.mode === "gap") {
     return '<div class="dd-row gap">' +
-      '<span class="dd-dates">' + fmtDate(d(pt.prev.end) + DAY) + " ~ " + pt.next.date + "</span>" +
+      '<span class="dd-name">' + esc(pt.name) + "</span>" +
+      '<span class="dd-gap">' + pt.gap + " 天</span>" +
       versionSeg(poolLabel(pt.prev), poolLabel(pt.next)) +
-      '<span class="dd-name">' + esc(pt.name) + "</span></div>";
+      '<span class="dd-dates">' + fmtDate(d(pt.prev.end) + DAY) + " ~ " + pt.next.date + "</span></div>";
   }
   return '<div class="dd-row avg">' +
-    '<span class="dd-dates">' + pt.firstEv.date + " → " + pt.lastEv.date + "</span>" +
+    '<span class="dd-name">' + esc(pt.name) + "</span>" +
+    '<span class="dd-stats">平均 <b>' + fmtNum(pt.avg) + "</b> 天 · " + pt.count + " 次 UP</span>" +
     versionSeg(poolLabel(pt.firstEv), poolLabel(pt.lastEv)) +
-    '<span class="dd-stats">' + pt.count + " 次 UP · 平均 <b>" + fmtNum(pt.avg) + "</b> 天</span>" +
-    '<span class="dd-name">' + esc(pt.name) + "</span></div>";
+    '<span class="dd-dates">' + pt.firstEv.date + " → " + pt.lastEv.date + "</span></div>";
 }
 
 (function buildDistribution() {
@@ -894,18 +896,11 @@ function renderDistDetail() {
   head.innerHTML = p.title + '<span class="dd-sub">' + binLabel(b) + " 天 ｜ 共 " + pts.length + " 条 ｜ 再点柱形取消</span>";
   let h = "";
   if (p.mode === "gap") {
-    const groups = {};
-    for (const pt of pts) (groups[pt.gap] = groups[pt.gap] || []).push(pt);
-    const keys = Object.keys(groups).map(Number).sort(function (x, y) { return y - x; });
-    for (const g of keys) {
-      h += '<div class="dd-group">' + g + " 天 · " + groups[g].length + " 条</div>";
-      groups[g].sort(function (x, y) { return x.name.localeCompare(y.name, "zh"); });
-      for (const pt of groups[g]) h += distRowHtml(p, pt);
-    }
+    pts.sort(function (x, y) { return (y.gap - x.gap) || x.name.localeCompare(y.name, "zh"); });
   } else {
-    pts.sort(function (x, y) { return y.avg - x.avg; });
-    for (const pt of pts) h += distRowHtml(p, pt);
+    pts.sort(function (x, y) { return (y.avg - x.avg) || x.name.localeCompare(y.name, "zh"); });
   }
+  for (const pt of pts) h += distRowHtml(p, pt);
   body.innerHTML = h;
 }
 
